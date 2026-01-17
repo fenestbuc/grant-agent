@@ -1,0 +1,8 @@
+# Modal + Crawl4AI Grant Scraper Dependencies
+modal>=0.64.0
+crawl4ai>=0.4.0
+anthropic>=0.39.0
+supabase>=2.0.0
+playwright>=1.40.0
+beautifulsoup4>=4.12.0
+httpx>=0.25.0

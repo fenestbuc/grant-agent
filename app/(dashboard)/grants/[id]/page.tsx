@@ -264,7 +264,7 @@ export default async function GrantDetailPage({ params }: PageProps) {
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4">
         <Button asChild size="lg" className="flex-1">
-          <Link href={`/applications/${grant.id}`}>
+          <Link href={`/applications/new/${grant.id}`}>
             Start Application
             <svg
               xmlns="http://www.w3.org/2000/svg"
