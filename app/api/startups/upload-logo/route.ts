@@ -76,12 +76,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get public URL
+    // Get public URL with cache-busting timestamp
     const { data: publicUrlData } = supabase.storage
       .from('startup-logos')
       .getPublicUrl(storagePath);
 
-    const logoUrl = publicUrlData.publicUrl;
+    // Add timestamp to bust browser/CDN cache
+    const logoUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
 
     // Update startup record
     const { error: updateError } = await supabase
