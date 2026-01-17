@@ -2,8 +2,11 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
+  // Create a response that we'll modify
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
   });
 
   const supabase = createServerClient(
@@ -15,15 +18,9 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
         },
       },
     }
@@ -32,11 +29,14 @@ export async function updateSession(request: NextRequest) {
   // Handle auth callback - exchange code for session
   if (request.nextUrl.pathname === '/auth/callback') {
     const code = request.nextUrl.searchParams.get('code');
+
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
+
       if (!error) {
         // Check if user has a startup profile
         const { data: { user } } = await supabase.auth.getUser();
+
         if (user) {
           const { data: startup } = await supabase
             .from('startups')
@@ -44,21 +44,35 @@ export async function updateSession(request: NextRequest) {
             .eq('user_id', user.id)
             .single();
 
-          const url = request.nextUrl.clone();
-          url.pathname = startup ? '/grants' : '/onboarding';
-          url.searchParams.delete('code');
-          return NextResponse.redirect(url, { headers: supabaseResponse.headers });
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = startup ? '/grants' : '/onboarding';
+          redirectUrl.searchParams.delete('code');
+
+          // Create redirect response and copy cookies from the current response
+          const redirectResponse = NextResponse.redirect(redirectUrl);
+          response.cookies.getAll().forEach((cookie) => {
+            redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+          });
+
+          return redirectResponse;
         }
+      } else {
+        // Auth error - redirect to login with error
+        console.error('Auth callback error:', error.message);
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = '/login';
+        loginUrl.searchParams.set('error', error.message);
+        loginUrl.searchParams.delete('code');
+        return NextResponse.redirect(loginUrl);
       }
     }
-    // If no code or error, let the page handle it
-    return supabaseResponse;
+
+    // No code - let the page handle it (might be hash fragment)
+    return response;
   }
 
   // Refresh the session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   // Protected routes - redirect to login if not authenticated
   const protectedPaths = ['/', '/grants', '/kb', '/applications', '/watchlist', '/settings', '/notifications', '/submit-grant'];
@@ -86,5 +100,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  return response;
 }
