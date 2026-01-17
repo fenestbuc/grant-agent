@@ -88,6 +88,61 @@ def generate_grant_id(name: str, provider: str) -> str:
     return hashlib.sha256(content.encode()).hexdigest()[:12]
 
 
+async def validate_grant_urls(grants: list[dict], timeout: float = 10.0) -> tuple[list[dict], list[dict]]:
+    """
+    Validate grant URLs and filter out grants with broken (404) URLs.
+
+    Returns:
+        tuple: (valid_grants, filtered_grants)
+    """
+    import httpx
+
+    valid_grants = []
+    filtered_grants = []
+
+    async with httpx.AsyncClient(
+        follow_redirects=True,
+        timeout=timeout,
+        headers={"User-Agent": "Mozilla/5.0 (compatible; GrantAgent/1.0)"}
+    ) as client:
+        for grant in grants:
+            url = grant.get("application_url") or grant.get("source_url", "")
+
+            if not url:
+                # No URL to validate, include the grant
+                valid_grants.append(grant)
+                continue
+
+            try:
+                # Use HEAD request for efficiency, fall back to GET if HEAD fails
+                try:
+                    response = await client.head(url)
+                except httpx.HTTPStatusError:
+                    response = await client.get(url)
+
+                if response.status_code == 404:
+                    print(f"Filtering out grant '{grant['name']}' - URL returns 404: {url}")
+                    filtered_grants.append({
+                        "name": grant["name"],
+                        "provider": grant["provider"],
+                        "url": url,
+                        "reason": "404 Not Found"
+                    })
+                else:
+                    valid_grants.append(grant)
+
+            except httpx.TimeoutException:
+                # Timeout - include the grant (might be slow server)
+                print(f"URL timeout for '{grant['name']}': {url} - including anyway")
+                valid_grants.append(grant)
+            except Exception as e:
+                # Other errors (connection refused, DNS, etc.) - include the grant
+                print(f"URL check error for '{grant['name']}': {url} - {str(e)[:50]} - including anyway")
+                valid_grants.append(grant)
+
+    return valid_grants, filtered_grants
+
+
 EXTRACTION_PROMPT = """
 Analyze this webpage content about Indian startup grants/funding schemes.
 Extract ALL grants mentioned and return a JSON array of grant objects.
@@ -459,12 +514,19 @@ async def run_full_scrape() -> dict:
 
     print(f"Total unique grants found: {len(unique_grants)}")
 
-    # Upsert to database
-    db_results = upsert_grants.remote(unique_grants)
+    # Validate URLs and filter out grants with broken (404) URLs
+    print("Validating grant URLs...")
+    valid_grants, filtered_grants = await validate_grant_urls(unique_grants)
+    print(f"Valid grants: {len(valid_grants)}, Filtered out (404): {len(filtered_grants)}")
+
+    # Upsert only valid grants to database
+    db_results = upsert_grants.remote(valid_grants)
 
     return {
         "timestamp": datetime.utcnow().isoformat(),
         "total_grants_found": len(unique_grants),
+        "valid_grants": len(valid_grants),
+        "filtered_grants": filtered_grants,
         "sources": source_results,
         "database": db_results,
     }
