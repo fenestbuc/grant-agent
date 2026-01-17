@@ -236,5 +236,242 @@ export const sendDeadlineReminders = inngest.createFunction(
   }
 );
 
+// Weekly digest job - sends summary of new grants and upcoming deadlines
+export const sendWeeklyDigest = inngest.createFunction(
+  { id: 'send-weekly-digest' },
+  { cron: '0 3 * * 1' }, // Run every Monday at 3 AM UTC (~9 AM IST)
+  async ({ step }) => {
+    const supabase = createAdminClient();
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'grants@grantagent.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    // Calculate date ranges
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const oneWeekAgo = new Date(today);
+    oneWeekAgo.setDate(today.getDate() - 7);
+
+    const in14Days = new Date(today);
+    in14Days.setDate(today.getDate() + 14);
+
+    // Get all startups
+    const startups = await step.run('get-startups', async () => {
+      const { data, error } = await supabase
+        .from('startups')
+        .select('id, user_id, name, sector, stage');
+
+      if (error) throw error;
+      return data || [];
+    });
+
+    // Get all new grants from the last week
+    const newGrants = await step.run('get-new-grants', async () => {
+      const { data, error } = await supabase
+        .from('grants')
+        .select('id, name, description, sectors, stages, deadline, url, amount_min, amount_max, currency')
+        .gte('created_at', oneWeekAgo.toISOString())
+        .eq('is_active', true);
+
+      if (error) throw error;
+      return data || [];
+    });
+
+    let digestsSent = 0;
+
+    // Process each startup
+    for (const startup of startups) {
+      await step.run(`process-startup-${startup.id}`, async () => {
+        // Find new grants matching this startup's sector/stage
+        const matchingNewGrants = newGrants.filter(grant => {
+          const sectorMatch = grant.sectors.length === 0 ||
+            grant.sectors.some((s: string) => s.toLowerCase() === startup.sector?.toLowerCase());
+          const stageMatch = grant.stages.length === 0 ||
+            grant.stages.includes(startup.stage);
+          return sectorMatch || stageMatch;
+        });
+
+        // Find watchlisted grants with deadlines in next 14 days
+        const { data: watchlistedGrants, error: watchlistError } = await supabase
+          .from('watchlist')
+          .select(`
+            grant_id,
+            grants (
+              id,
+              name,
+              deadline,
+              url
+            )
+          `)
+          .eq('startup_id', startup.id);
+
+        if (watchlistError) {
+          console.error(`Failed to get watchlist for startup ${startup.id}:`, watchlistError);
+          return;
+        }
+
+        // Filter for grants with upcoming deadlines
+        const upcomingDeadlineGrants = (watchlistedGrants || [])
+          .map(w => w.grants as unknown as { id: string; name: string; deadline: string | null; url: string } | null)
+          .filter((grant): grant is { id: string; name: string; deadline: string; url: string } => {
+            if (!grant || !grant.deadline) return false;
+            const deadlineDate = new Date(grant.deadline);
+            return deadlineDate >= today && deadlineDate <= in14Days;
+          })
+          .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+
+        // Skip if nothing to report
+        if (matchingNewGrants.length === 0 && upcomingDeadlineGrants.length === 0) {
+          return;
+        }
+
+        // Get user email
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(startup.user_id);
+        if (userError || !userData.user?.email) {
+          console.error(`Failed to get user email for startup ${startup.id}`);
+          return;
+        }
+
+        // Build email content
+        let emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Weekly Grant Digest</h2>
+            <p>Hi${startup.name ? ` ${startup.name} team` : ''},</p>
+            <p>Here's your weekly summary of grant opportunities:</p>
+        `;
+
+        // New Grants Section
+        if (matchingNewGrants.length > 0) {
+          emailHtml += `
+            <h3 style="color: #16a34a; margin-top: 24px;">New Grants This Week</h3>
+            <p style="color: #6b7280; font-size: 14px;">
+              ${matchingNewGrants.length} new grant${matchingNewGrants.length > 1 ? 's' : ''} matching your profile
+            </p>
+            <ul style="list-style: none; padding: 0;">
+          `;
+
+          for (const grant of matchingNewGrants.slice(0, 5)) {
+            const amountText = grant.amount_min && grant.amount_max
+              ? `${grant.currency} ${grant.amount_min.toLocaleString('en-IN')} - ${grant.amount_max.toLocaleString('en-IN')}`
+              : grant.amount_min
+                ? `Up to ${grant.currency} ${grant.amount_min.toLocaleString('en-IN')}`
+                : '';
+
+            emailHtml += `
+              <li style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                <a href="${appUrl}/grants/${grant.id}" style="color: #2563eb; font-weight: 600; text-decoration: none; font-size: 16px;">
+                  ${grant.name}
+                </a>
+                ${amountText ? `<p style="color: #059669; margin: 8px 0 4px 0; font-weight: 500;">${amountText}</p>` : ''}
+                <p style="color: #6b7280; margin: 4px 0; font-size: 14px; line-height: 1.5;">
+                  ${grant.description ? grant.description.substring(0, 150) + (grant.description.length > 150 ? '...' : '') : ''}
+                </p>
+              </li>
+            `;
+          }
+
+          if (matchingNewGrants.length > 5) {
+            emailHtml += `
+              <p style="text-align: center;">
+                <a href="${appUrl}/grants" style="color: #2563eb;">
+                  View ${matchingNewGrants.length - 5} more new grants
+                </a>
+              </p>
+            `;
+          }
+
+          emailHtml += `</ul>`;
+        }
+
+        // Upcoming Deadlines Section
+        if (upcomingDeadlineGrants.length > 0) {
+          emailHtml += `
+            <h3 style="color: #dc2626; margin-top: 24px;">Upcoming Deadlines</h3>
+            <p style="color: #6b7280; font-size: 14px;">
+              ${upcomingDeadlineGrants.length} watchlisted grant${upcomingDeadlineGrants.length > 1 ? 's' : ''} with deadlines in the next 14 days
+            </p>
+            <ul style="list-style: none; padding: 0;">
+          `;
+
+          for (const grant of upcomingDeadlineGrants) {
+            const deadline = new Date(grant.deadline);
+            const daysUntil = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            const formattedDeadline = deadline.toLocaleDateString('en-IN', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+            });
+
+            const urgencyColor = daysUntil <= 3 ? '#dc2626' : daysUntil <= 7 ? '#f59e0b' : '#6b7280';
+
+            emailHtml += `
+              <li style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <a href="${appUrl}/grants/${grant.id}" style="color: #2563eb; font-weight: 600; text-decoration: none;">
+                    ${grant.name}
+                  </a>
+                </div>
+                <div style="text-align: right;">
+                  <span style="color: ${urgencyColor}; font-weight: 600;">
+                    ${daysUntil} day${daysUntil !== 1 ? 's' : ''} left
+                  </span>
+                  <br>
+                  <span style="color: #9ca3af; font-size: 12px;">${formattedDeadline}</span>
+                </div>
+              </li>
+            `;
+          }
+
+          emailHtml += `</ul>`;
+        }
+
+        // Footer
+        emailHtml += `
+            <div style="margin-top: 32px; text-align: center;">
+              <a href="${appUrl}/grants"
+                 style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                Explore All Grants
+              </a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+              Grant Agent - Helping founders discover and apply for grants
+            </p>
+          </div>
+        `;
+
+        // Send the email
+        try {
+          const subjectParts = [];
+          if (matchingNewGrants.length > 0) {
+            subjectParts.push(`${matchingNewGrants.length} new grant${matchingNewGrants.length > 1 ? 's' : ''}`);
+          }
+          if (upcomingDeadlineGrants.length > 0) {
+            subjectParts.push(`${upcomingDeadlineGrants.length} upcoming deadline${upcomingDeadlineGrants.length > 1 ? 's' : ''}`);
+          }
+
+          await resend.emails.send({
+            from: fromEmail,
+            to: userData.user.email,
+            subject: `Weekly Digest: ${subjectParts.join(' & ')}`,
+            html: emailHtml,
+          });
+
+          digestsSent++;
+        } catch (emailError) {
+          console.error(`Failed to send weekly digest to ${userData.user.email}:`, emailError);
+        }
+      });
+    }
+
+    return {
+      startupsProcessed: startups.length,
+      newGrantsFound: newGrants.length,
+      digestsSent,
+    };
+  }
+);
+
 // Export all functions
-export const functions = [processDocument, sendDeadlineReminders];
+export const functions = [processDocument, sendDeadlineReminders, sendWeeklyDigest];

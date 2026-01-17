@@ -75,7 +75,7 @@ Description: ${startup.description || 'Not provided'}
 
     // Generate answer using Claude
     const response = await getAnthropic().messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: maxLength ? Math.min(maxLength * 2, 4000) : 2000,
       messages: [
         {

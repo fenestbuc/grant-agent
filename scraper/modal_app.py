@@ -365,19 +365,30 @@ def upsert_grants(grants: list[dict]) -> dict:
                 .execute()
             )
 
-            # Prepare grant data for database (no external_id column in schema)
+            # Prepare grant data for database (matching actual schema)
+            # Map source_type to provider_type
+            source_type = grant.get("source_type", "government")
+            provider_type_map = {
+                "government": "government",
+                "csr": "csr",
+                "aggregator": "private",  # aggregator sources mapped to private
+                "private": "private",
+                "ngo": "ngo",
+            }
+            provider_type = provider_type_map.get(source_type, "government")
+
             grant_data = {
                 "name": grant["name"],
                 "provider": grant["provider"],
+                "provider_type": provider_type,
                 "amount_min": grant.get("amount_min"),
                 "amount_max": grant.get("amount_max"),
                 "deadline": grant.get("deadline"),
-                "description": grant.get("description", ""),
+                "description": grant.get("description", "") or "No description available",
                 "sectors": grant.get("sectors", []),
                 "stages": grant.get("stages", []),
                 "eligibility_criteria": grant.get("eligibility_criteria", {}),
-                "application_url": grant.get("application_url"),
-                "source_url": grant.get("source_url"),
+                "url": grant.get("application_url") or grant.get("source_url", ""),
                 "is_active": grant.get("is_active", True),
                 "updated_at": datetime.utcnow().isoformat(),
             }
