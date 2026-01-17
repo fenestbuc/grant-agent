@@ -1,7 +1,7 @@
 {
-  "name": "grant-agent",
+  "name": "grants-india",
   "version": "0.1.0",
-  "description": "AI-powered platform to help Indian startup founders discover grants and auto-generate application answers",
+  "description": "AI-powered platform helping Indian startup founders discover grants and auto-generate application answers",
   "private": true,
   "scripts": {
     "dev": "next dev",

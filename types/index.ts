@@ -59,6 +59,7 @@ export interface Startup {
   website: string | null;
   linkedin: string | null;
   is_women_led: boolean;
+  logo_url?: string | null;
   created_at: string;
   updated_at: string;
   // Usage tracking fields (optional - have database defaults)

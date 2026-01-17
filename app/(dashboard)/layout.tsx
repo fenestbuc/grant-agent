@@ -18,7 +18,7 @@ export default async function DashboardLayout({
   // Check if user has a startup profile
   const { data: startup } = await supabase
     .from('startups')
-    .select('id, name')
+    .select('id, name, logo_url')
     .eq('user_id', user.id)
     .single();
 

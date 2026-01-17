@@ -1,11 +1,14 @@
 // app/(dashboard)/grants/page.tsx
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
-import { GrantCard } from '@/components/grants/grant-card';
+import { GrantsGridClient } from '@/components/grants/grants-grid-client';
 import { GrantFilter, GrantFilterSidebar } from '@/components/grants/grant-filter';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+
+// Revalidate grants data every hour (grants don't change frequently)
+export const revalidate = 3600;
 
 interface PageProps {
   searchParams: Promise<{
@@ -94,11 +97,7 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {grants.map((grant) => (
-          <GrantCard key={grant.id} grant={grant} />
-        ))}
-      </div>
+      <GrantsGridClient grants={grants} />
 
       {/* Pagination */}
       {totalPages > 1 && (

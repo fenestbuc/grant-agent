@@ -215,7 +215,7 @@ export const sendDeadlineReminders = inngest.createFunction(
                   </p>
                   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
                   <p style="color: #9ca3af; font-size: 12px;">
-                    Grant Agent - Helping founders discover and apply for grants
+                    Grants India - Helping founders discover and apply for grants
                   </p>
                 </div>
               `,
@@ -436,7 +436,7 @@ export const sendWeeklyDigest = inngest.createFunction(
             </div>
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
             <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-              Grant Agent - Helping founders discover and apply for grants
+              Grants India - Helping founders discover and apply for grants
             </p>
           </div>
         `;

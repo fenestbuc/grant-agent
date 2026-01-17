@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { LogoUpload } from '@/components/settings/logo-upload';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -83,6 +84,22 @@ export default async function SettingsPage() {
               })}
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Startup Logo */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Startup Logo</CardTitle>
+          <CardDescription>
+            Upload a logo to represent your startup in the app
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LogoUpload
+            currentLogoUrl={startup.logo_url || null}
+            startupName={startup.name}
+          />
         </CardContent>
       </Card>
 
