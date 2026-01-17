@@ -1,7 +1,8 @@
 // app/api/kb/upload/route.ts
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { inngest } from '@/lib/inngest/client';
 import { NextRequest, NextResponse } from 'next/server';
+import { extractTextFromFile, extractMetadata, chunkText, generateEmbeddings } from '@/lib/llm/document-processor';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/csv'];
@@ -101,21 +102,101 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Database error: ${dbError.message}` }, { status: 500 });
     }
 
-    // Trigger processing workflow
-    try {
-      await inngest.send({
-        name: 'kb/document.uploaded',
-        data: {
-          documentId: document.id,
-          startupId: startup.id,
-          storagePath,
-          fileType,
-        },
-      });
-    } catch (inngestError) {
-      // Log error but don't fail - document was uploaded successfully
-      // Processing can be retried later via admin or background job
-      console.error('Failed to trigger document processing:', inngestError);
+    // Try Inngest first, fall back to synchronous processing
+    let useInngest = !!process.env.INNGEST_EVENT_KEY;
+
+    if (useInngest) {
+      try {
+        await inngest.send({
+          name: 'kb/document.uploaded',
+          data: {
+            documentId: document.id,
+            startupId: startup.id,
+            storagePath,
+            fileType,
+          },
+        });
+        return NextResponse.json({ data: document });
+      } catch (inngestError) {
+        console.error('Inngest failed, falling back to sync processing:', inngestError);
+        useInngest = false;
+      }
+    }
+
+    // Synchronous processing fallback when Inngest is not available
+    if (!useInngest) {
+      try {
+        const supabaseAdmin = createAdminClient();
+
+        // Update status to processing
+        await supabaseAdmin
+          .from('kb_documents')
+          .update({ status: 'processing' })
+          .eq('id', document.id);
+
+        // Download and extract text
+        const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+          .from('kb-documents')
+          .download(storagePath);
+
+        if (downloadError) throw new Error(`Failed to download: ${downloadError.message}`);
+
+        const arrayBuffer = await fileData.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const extractedText = await extractTextFromFile(buffer, fileType);
+
+        // Extract metadata
+        const metadata = await extractMetadata(extractedText);
+
+        // Chunk the text
+        const chunks = chunkText(extractedText, 500, 50);
+
+        // Generate embeddings
+        const chunksWithEmbeddings = await generateEmbeddings(chunks);
+
+        // Store chunks in database
+        const chunkRecords = chunksWithEmbeddings.map((chunk, index) => ({
+          document_id: document.id,
+          startup_id: startup.id,
+          content: chunk.content,
+          chunk_index: index,
+          embedding: chunk.embedding,
+        }));
+
+        const { error: chunkError } = await supabaseAdmin.from('kb_chunks').insert(chunkRecords);
+        if (chunkError) throw new Error(`Failed to store chunks: ${chunkError.message}`);
+
+        // Update document with completed status
+        await supabaseAdmin
+          .from('kb_documents')
+          .update({
+            status: 'completed',
+            extracted_metadata: metadata,
+          })
+          .eq('id', document.id);
+
+        // Refetch updated document
+        const { data: updatedDoc } = await supabaseAdmin
+          .from('kb_documents')
+          .select('*')
+          .eq('id', document.id)
+          .single();
+
+        return NextResponse.json({ data: updatedDoc || document });
+      } catch (processError) {
+        console.error('Document processing error:', processError);
+        // Update status to failed
+        const supabaseAdmin = createAdminClient();
+        await supabaseAdmin
+          .from('kb_documents')
+          .update({ status: 'failed' })
+          .eq('id', document.id);
+
+        return NextResponse.json({
+          data: document,
+          warning: 'Document uploaded but processing failed. You can retry later.'
+        });
+      }
     }
 
     return NextResponse.json({ data: document });
