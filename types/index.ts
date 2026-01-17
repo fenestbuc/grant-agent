@@ -61,6 +61,10 @@ export interface Startup {
   is_women_led: boolean;
   created_at: string;
   updated_at: string;
+  // Usage tracking fields (optional - have database defaults)
+  answers_generated?: number;
+  applications_today?: number;
+  last_application_date?: string | null;
 }
 
 export interface KBDocument {
@@ -176,4 +180,37 @@ export interface GrantFilters {
 export interface GrantWithScore extends Grant {
   match_score: number;
   match_reasons: string[];
+}
+
+// Answer edit tracking
+export interface AnswerEdit {
+  id: string;
+  application_id: string;
+  question_id: string;
+  original_answer: string;
+  edited_answer: string;
+  created_at: string;
+}
+
+// User-submitted grants
+export interface UserSubmittedGrant {
+  id: string;
+  startup_id: string;
+  url: string;
+  is_google_form: boolean;
+  name: string | null;
+  provider: string | null;
+  scraped_questions: ApplicationQuestion[];
+  status: 'pending' | 'approved' | 'rejected' | 'processing';
+  created_at: string;
+}
+
+// Usage status response
+export interface UsageStatus {
+  answers_generated: number;
+  answers_remaining: number;
+  applications_today: number;
+  applications_remaining_today: number;
+  lifetime_limit: number;
+  daily_limit: number;
 }

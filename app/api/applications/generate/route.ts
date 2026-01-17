@@ -1,16 +1,20 @@
 // app/api/applications/generate/route.ts
 import { createClient } from '@/lib/supabase/server';
 import { generateQueryEmbedding } from '@/lib/llm/document-processor';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 
-let anthropic: Anthropic | null = null;
-function getAnthropic(): Anthropic {
-  if (!anthropic) {
-    anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+let openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!openai) {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   }
-  return anthropic;
+  return openai;
 }
+
+// Usage limits
+const LIFETIME_ANSWER_LIMIT = 70;
+const DAILY_APPLICATION_LIMIT = 10;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -29,6 +33,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!startup) {
       return NextResponse.json({ error: 'No startup profile found' }, { status: 400 });
+    }
+
+    // Check usage limits
+    const today = new Date().toISOString().split('T')[0];
+    const isNewDay = !startup.last_application_date || startup.last_application_date < today;
+    const currentAnswers = startup.answers_generated || 0;
+    const currentAppsToday = isNewDay ? 0 : (startup.applications_today || 0);
+
+    if (currentAnswers >= LIFETIME_ANSWER_LIMIT) {
+      return NextResponse.json({
+        error: 'You have reached the lifetime limit of 70 AI-generated answers. Please contact support for more.',
+        code: 'LIFETIME_LIMIT_REACHED',
+      }, { status: 429 });
+    }
+
+    if (currentAppsToday >= DAILY_APPLICATION_LIMIT) {
+      return NextResponse.json({
+        error: 'You have reached the daily limit of 10 applications. Please try again tomorrow.',
+        code: 'DAILY_LIMIT_REACHED',
+      }, { status: 429 });
     }
 
     const { question, grantName, maxLength } = await request.json();
@@ -73,11 +97,24 @@ ${startup.is_women_led ? 'Women-led' : ''}
 Description: ${startup.description || 'Not provided'}
     `.trim();
 
-    // Generate answer using Claude
-    const response = await getAnthropic().messages.create({
-      model: 'claude-sonnet-4-20250514',
+    // Generate answer using GPT-4o-mini
+    const response = await getOpenAI().chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: maxLength ? Math.min(maxLength * 2, 4000) : 2000,
       messages: [
+        {
+          role: 'system',
+          content: `You are an expert grant application writer helping Indian startups secure funding.
+
+CRITICAL RULES:
+1. Never mention word counts, character limits, or say "Word count: X out of Y" in your output
+2. Never include meta-commentary about the answer length or format
+3. Write the answer directly without any preamble like "Here is your answer:" or "Answer:"
+4. Be specific and use concrete details from the provided context
+5. If context is limited, write a reasonable answer based on the startup profile that the founder can edit
+
+Your answers should be compelling, specific, and directly address the question asked.`,
+        },
         {
           role: 'user',
           content: `You are helping a startup founder write a compelling grant application answer.
@@ -92,14 +129,13 @@ GRANT: ${grantName || 'Grant application'}
 
 QUESTION: ${question}
 
-${maxLength ? `CHARACTER LIMIT: ${maxLength} characters` : ''}
+${maxLength ? `Keep the answer under ${maxLength} characters.` : ''}
 
 Write a professional, compelling answer that:
 1. Directly addresses the question
 2. Uses specific facts and data from the documents when available
 3. Highlights the startup's strengths relevant to the question
 4. Is concise and impactful
-${maxLength ? `5. Stays within ${maxLength} characters` : ''}
 
 If the documents don't contain relevant information, use the startup profile and write a reasonable answer that the founder can edit.
 
@@ -108,10 +144,13 @@ Answer:`,
       ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response format');
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('Unexpected response format from OpenAI');
     }
+
+    // Increment usage counter
+    await supabase.rpc('increment_answers_generated', { p_startup_id: startup.id });
 
     // Build sources array
     const sources = chunks?.map((chunk: { document_id: string; content: string; similarity: number }) => ({
@@ -123,7 +162,7 @@ Answer:`,
 
     return NextResponse.json({
       data: {
-        answer: content.text,
+        answer: content.trim(),
         sources,
       },
     });
