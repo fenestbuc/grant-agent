@@ -121,7 +121,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome to Grant Agent</h1>
+          <h1 className="text-3xl font-bold mb-2">Welcome to Grants India</h1>
           <p className="text-muted-foreground">
             Tell us about your startup to get personalized grant recommendations
           </p>

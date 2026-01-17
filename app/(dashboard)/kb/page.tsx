@@ -27,7 +27,7 @@ export default function KnowledgeBasePage() {
     fetchDocuments();
   }, [fetchDocuments]);
 
-  // Poll for status updates when documents are processing
+  // Poll for status updates when documents are processing with exponential backoff
   useEffect(() => {
     const hasProcessing = documents.some(
       (doc) => doc.status === 'pending' || doc.status === 'processing'
@@ -35,8 +35,21 @@ export default function KnowledgeBasePage() {
 
     if (!hasProcessing) return;
 
-    const interval = setInterval(fetchDocuments, 5000);
-    return () => clearInterval(interval);
+    let pollInterval = 5000; // Start at 5 seconds
+    const maxInterval = 30000; // Max 30 seconds
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const poll = () => {
+      fetchDocuments();
+      // Exponential backoff: 5s → 10s → 20s → 30s max
+      pollInterval = Math.min(pollInterval * 2, maxInterval);
+      timeoutId = setTimeout(poll, pollInterval);
+    };
+
+    // Start first poll after initial interval
+    timeoutId = setTimeout(poll, pollInterval);
+
+    return () => clearTimeout(timeoutId);
   }, [documents, fetchDocuments]);
 
   const handleUploadComplete = () => {

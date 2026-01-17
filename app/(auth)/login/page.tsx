@@ -44,7 +44,7 @@ export default function LoginPage() {
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -71,7 +71,7 @@ export default function LoginPage() {
           )}
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full mt-2" disabled={isLoading}>
             {isLoading ? 'Sending link...' : 'Send Magic Link'}
           </Button>
           <p className="text-sm text-muted-foreground text-center">

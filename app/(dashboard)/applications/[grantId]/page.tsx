@@ -120,14 +120,7 @@ export default function ApplicationPage({ params }: PageProps) {
       const { data } = await res.json();
       const fullAnswer = data.answer;
 
-      // Type out the answer character by character
-      let currentAnswer = '';
-      for (let i = 0; i < fullAnswer.length; i += 3) {
-        currentAnswer = fullAnswer.slice(0, i + 3);
-        setAnswers((prev) => ({ ...prev, [questionId]: currentAnswer }));
-        await new Promise((resolve) => setTimeout(resolve, 5));
-      }
-
+      // Display the answer immediately
       setAnswers((prev) => ({ ...prev, [questionId]: fullAnswer }));
       setOriginalAnswers((prev) => ({ ...prev, [questionId]: fullAnswer }));
       setGenerated((prev) => ({ ...prev, [questionId]: true }));

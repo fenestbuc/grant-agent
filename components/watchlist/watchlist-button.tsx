@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { SaveToWatchlistModal } from './save-to-watchlist-modal';
 import { cn } from '@/lib/utils';
+import { useWatchlistContext } from './watchlist-context';
 
 interface WatchlistButtonProps {
   grantId: string;
@@ -18,12 +19,29 @@ export function WatchlistButton({
   variant = 'icon',
   className,
 }: WatchlistButtonProps) {
+  const watchlistContext = useWatchlistContext();
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistId, setWatchlistId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If context is available, use batched data
+    if (watchlistContext) {
+      const status = watchlistContext.getStatus(grantId);
+      if (status) {
+        setInWatchlist(status.inWatchlist);
+        setWatchlistId(status.watchlistId);
+        setLoading(false);
+        return;
+      }
+      // If context is still loading, wait
+      if (watchlistContext.isLoading) {
+        return;
+      }
+    }
+
+    // Fallback: fetch individually if no context or status not found
     async function checkWatchlist() {
       try {
         const response = await fetch(`/api/watchlist/check/${grantId}`);
@@ -35,7 +53,7 @@ export function WatchlistButton({
       }
     }
     checkWatchlist();
-  }, [grantId]);
+  }, [grantId, watchlistContext]);
 
   const handleRemove = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -49,6 +67,8 @@ export function WatchlistButton({
     if (response.ok) {
       setInWatchlist(false);
       setWatchlistId(null);
+      // Sync with context if available
+      watchlistContext?.setStatus(grantId, { inWatchlist: false, watchlistId: null });
     }
   };
 
@@ -68,7 +88,10 @@ export function WatchlistButton({
     fetch(`/api/watchlist/check/${grantId}`)
       .then((res) => res.json())
       .then((result) => {
-        setWatchlistId(result.data.watchlistId);
+        const newWatchlistId = result.data.watchlistId;
+        setWatchlistId(newWatchlistId);
+        // Sync with context if available
+        watchlistContext?.setStatus(grantId, { inWatchlist: true, watchlistId: newWatchlistId });
       });
   };
 

@@ -40,11 +40,11 @@ export default function SignUpPage() {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
         <CardDescription>
-          Enter your email to get started with Grant Agent
+          Enter your email to get started with Grants India
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -83,7 +83,7 @@ export default function SignUpPage() {
           </p>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full mt-2" disabled={isLoading}>
             {isLoading ? 'Sending link...' : 'Sign Up with Email'}
           </Button>
           <p className="text-sm text-muted-foreground text-center">

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from '@/app/(auth)/actions';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,7 @@ import { NotificationBell } from '@/components/notifications';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 interface HeaderProps {
-  startup: { id: string; name: string };
+  startup: { id: string; name: string; logo_url?: string | null };
   userEmail: string;
 }
 
@@ -65,7 +65,7 @@ export function Header({ startup, userEmail }: HeaderProps) {
                   <path d="M12 18V6" />
                 </svg>
               </div>
-              <span className="text-xl font-bold">Grant Agent</span>
+              <span className="text-xl font-bold">Grants India</span>
             </Link>
           </div>
           <nav className="flex flex-col gap-y-1 p-4">
@@ -108,6 +108,9 @@ export function Header({ startup, userEmail }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10">
+                  {startup.logo_url && (
+                    <AvatarImage src={startup.logo_url} alt={startup.name} />
+                  )}
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     {initials}
                   </AvatarFallback>

@@ -95,7 +95,7 @@ export function Sidebar() {
                 <path d="M12 18V6" />
               </svg>
             </div>
-            <span className="text-xl font-bold">Grant Agent</span>
+            <span className="text-xl font-bold">Grants India</span>
           </Link>
         </div>
         <nav className="flex flex-1 flex-col">
