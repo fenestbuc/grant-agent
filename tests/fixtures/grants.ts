@@ -6,7 +6,7 @@
 import type { Grant, EligibilityCriteria, ApplicationQuestion } from '@/types';
 
 // Helper to generate a unique ID for testing
-export const generateGrantId = () => `grant-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+export const generateGrantId = () => `grant-test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
 // Common application questions used across fixtures
 const commonQuestions: ApplicationQuestion[] = [

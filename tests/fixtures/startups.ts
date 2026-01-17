@@ -6,8 +6,8 @@
 import type { Startup } from '@/types';
 
 // Helper to generate unique IDs for testing
-export const generateStartupId = () => `startup-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-export const generateUserId = () => `user-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+export const generateStartupId = () => `startup-test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+export const generateUserId = () => `user-test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
 /**
  * Early-stage tech startup fixture
@@ -134,7 +134,9 @@ export const startupsByStage = {
   idea: ideaStageStartup,
   prototype: prototypeStageStartup,
   mvp: mvpStageStartup,
+  early_revenue: createStartupFixture({ ...mvpStageStartup, stage: 'early_revenue', name: 'Early Revenue Startup' }),
   growth: growthStageStartup,
+  scaling: createStartupFixture({ ...growthStageStartup, stage: 'scaling', name: 'Scaling Startup' }),
 };
 
 /**

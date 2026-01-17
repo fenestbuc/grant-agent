@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { Grant, Startup, KBDocument, Application } from '@/types';
+import type { Grant, Startup, KBDocument, Application, ApplicationAnswer } from '@/types';
 
 // Test database client - uses service role key for full access during tests
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
@@ -112,7 +112,7 @@ export async function createTestApplication(application: {
   startup_id: string;
   grant_id: string;
   status?: 'draft' | 'in_progress' | 'completed' | 'submitted';
-  answers?: unknown[];
+  answers?: ApplicationAnswer[];
   match_score?: number | null;
   notes?: string | null;
 }): Promise<Application> {

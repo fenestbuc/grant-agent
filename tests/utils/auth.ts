@@ -16,7 +16,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-servic
 export function createMockUser(overrides: Partial<User> = {}): User {
   const now = new Date().toISOString();
   return {
-    id: `user-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `user-test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     aud: 'authenticated',
     role: 'authenticated',
     email: `test-${Date.now()}@example.com`,
