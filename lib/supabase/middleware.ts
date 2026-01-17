@@ -29,15 +29,42 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Handle auth callback - exchange code for session
+  if (request.nextUrl.pathname === '/auth/callback') {
+    const code = request.nextUrl.searchParams.get('code');
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (!error) {
+        // Check if user has a startup profile
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: startup } = await supabase
+            .from('startups')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+
+          const url = request.nextUrl.clone();
+          url.pathname = startup ? '/grants' : '/onboarding';
+          url.searchParams.delete('code');
+          return NextResponse.redirect(url, { headers: supabaseResponse.headers });
+        }
+      }
+    }
+    // If no code or error, let the page handle it
+    return supabaseResponse;
+  }
+
   // Refresh the session if expired
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   // Protected routes - redirect to login if not authenticated
-  const protectedPaths = ['/grants', '/kb', '/applications', '/watchlist', '/settings'];
+  const protectedPaths = ['/', '/grants', '/kb', '/applications', '/watchlist', '/settings', '/notifications', '/submit-grant'];
   const isProtectedPath = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
+    request.nextUrl.pathname === path ||
+    (path !== '/' && request.nextUrl.pathname.startsWith(path))
   );
 
   if (isProtectedPath && !user) {
