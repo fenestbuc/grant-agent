@@ -12,14 +12,36 @@ from typing import Optional
 import hashlib
 
 # Define the Modal image with all dependencies
-image = modal.Image.debian_slim(python_version="3.11").pip_install(
-    "crawl4ai>=0.4.0",
-    "anthropic>=0.39.0",
-    "supabase>=2.0.0",
-    "playwright>=1.40.0",
-    "beautifulsoup4>=4.12.0",
-    "httpx>=0.25.0",
-    "fastapi>=0.109.0",
+image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .apt_install(
+        # Playwright dependencies
+        "libnss3",
+        "libnspr4",
+        "libatk1.0-0",
+        "libatk-bridge2.0-0",
+        "libcups2",
+        "libdrm2",
+        "libxkbcommon0",
+        "libxcomposite1",
+        "libxdamage1",
+        "libxfixes3",
+        "libxrandr2",
+        "libgbm1",
+        "libasound2",
+        "libpango-1.0-0",
+        "libcairo2",
+    )
+    .pip_install(
+        "crawl4ai>=0.4.0",
+        "anthropic>=0.39.0",
+        "supabase>=2.0.0",
+        "playwright>=1.40.0",
+        "beautifulsoup4>=4.12.0",
+        "httpx>=0.25.0",
+        "fastapi>=0.109.0",
+    )
+    .run_commands("playwright install chromium")
 )
 
 # Create Modal app
@@ -94,7 +116,7 @@ Return ONLY a valid JSON array. If no grants found, return empty array [].
 
 Example output:
 [
-  {
+  {{
     "name": "Startup India Seed Fund Scheme",
     "provider": "DPIIT",
     "amount_min": 2000000,
@@ -103,7 +125,7 @@ Example output:
     "description": "Provides financial assistance to startups for proof of concept, prototype development, product trials, market entry, and commercialization.",
     "sectors": ["all"],
     "stages": ["ideation", "early"],
-    "eligibility_criteria": {
+    "eligibility_criteria": {{
       "min_age_months": null,
       "max_age_months": 24,
       "incorporation_required": true,
@@ -111,10 +133,10 @@ Example output:
       "women_led": false,
       "states": [],
       "entity_types": ["private_limited", "llp", "partnership"]
-    },
+    }},
     "application_url": "https://seedfund.startupindia.gov.in/apply",
     "is_active": true
-  }
+  }}
 ]
 
 Webpage content:
@@ -129,23 +151,24 @@ Webpage content:
     ],
     timeout=600,
 )
-async def scrape_and_extract(source: dict) -> list[dict]:
+async def scrape_and_extract(source: dict) -> dict:
     """Scrape a grant source and extract structured data."""
     from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
     import anthropic
 
+    debug_info = {"url": source["url"], "content_length": 0, "crawl_success": False}
     print(f"Scraping: {source['name']} - {source['url']}")
 
     # Configure browser for JavaScript-heavy sites
     browser_config = BrowserConfig(
         headless=True,
-        verbose=False,
+        verbose=True,
     )
 
     crawler_config = CrawlerRunConfig(
         wait_until="networkidle",
         page_timeout=60000,
-        delay_before_return_html=2.0,
+        delay_before_return_html=3.0,
     )
 
     try:
@@ -155,16 +178,33 @@ async def scrape_and_extract(source: dict) -> list[dict]:
                 config=crawler_config,
             )
 
+            debug_info["crawl_success"] = result.success
             if not result.success:
+                debug_info["error"] = result.error_message
                 print(f"Failed to crawl {source['url']}: {result.error_message}")
-                return []
+                return {"grants": [], "debug": debug_info}
 
             # Get markdown content (LLM-ready format)
-            content = result.markdown_v2.raw_markdown if result.markdown_v2 else result.markdown
+            # Crawl4AI 0.8+ returns MarkdownGenerationResult with raw_markdown property
+            if hasattr(result, 'markdown') and result.markdown:
+                if hasattr(result.markdown, 'raw_markdown'):
+                    content = result.markdown.raw_markdown
+                else:
+                    content = str(result.markdown)
+            else:
+                content = ""
+
+            # Fallback to html if markdown is empty
+            if not content or len(content) < 100:
+                content = result.html[:50000] if result.html else ""
+                debug_info["used_html_fallback"] = True
+
+            debug_info["content_length"] = len(content) if content else 0
+            debug_info["content_preview"] = content[:500] if content else ""
 
             if not content or len(content) < 100:
                 print(f"No meaningful content extracted from {source['url']}")
-                return []
+                return {"grants": [], "debug": debug_info}
 
             # Truncate if too long
             content = content[:50000]
@@ -172,15 +212,18 @@ async def scrape_and_extract(source: dict) -> list[dict]:
             print(f"Extracted {len(content)} chars from {source['url']}")
 
     except Exception as e:
+        debug_info["error"] = str(e)
         print(f"Crawl error for {source['url']}: {e}")
-        return []
+        return {"grants": [], "debug": debug_info}
 
     # Extract structured data using Claude
+    response_text = None
+    json_text = None
     try:
         client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
         response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-4-20250514",
             max_tokens=4096,
             messages=[
                 {
@@ -191,33 +234,104 @@ async def scrape_and_extract(source: dict) -> list[dict]:
         )
 
         response_text = response.content[0].text
+        debug_info["claude_response_preview"] = response_text[:1000]
 
         # Parse JSON from response
         # Handle potential markdown code blocks
-        if "```json" in response_text:
-            response_text = response_text.split("```json")[1].split("```")[0]
-        elif "```" in response_text:
-            response_text = response_text.split("```")[1].split("```")[0]
+        json_text = response_text
+        if "```json" in json_text:
+            json_text = json_text.split("```json")[1].split("```")[0]
+        elif "```" in json_text:
+            json_text = json_text.split("```")[1].split("```")[0]
 
-        grants = json.loads(response_text.strip())
+        # Try to find JSON array in response
+        json_text = json_text.strip()
+        if not json_text.startswith("["):
+            # Try to find array start
+            start_idx = json_text.find("[")
+            if start_idx != -1:
+                json_text = json_text[start_idx:]
 
-        # Add source metadata
-        for grant in grants:
+        # Find matching end bracket
+        if json_text.startswith("["):
+            bracket_count = 0
+            end_idx = 0
+            for i, c in enumerate(json_text):
+                if c == "[":
+                    bracket_count += 1
+                elif c == "]":
+                    bracket_count -= 1
+                    if bracket_count == 0:
+                        end_idx = i + 1
+                        break
+            if end_idx > 0:
+                json_text = json_text[:end_idx]
+
+        debug_info["json_text_preview"] = json_text[:500] if json_text else "N/A"
+        parsed = json.loads(json_text)
+        debug_info["parsed_type"] = str(type(parsed))
+
+        # Ensure we have a list
+        if isinstance(parsed, dict):
+            # Check if it's wrapped in a "grants" key
+            if "grants" in parsed and isinstance(parsed["grants"], list):
+                grants = parsed["grants"]
+            else:
+                grants = [parsed]
+        elif isinstance(parsed, list):
+            grants = parsed
+        else:
+            debug_info["parse_type_error"] = f"Unexpected type: {type(parsed)}"
+            return {"grants": [], "debug": debug_info}
+
+        debug_info["grants_count_before_validation"] = len(grants)
+
+        # Validate and add source metadata
+        valid_grants = []
+        for i, grant in enumerate(grants):
+            if not isinstance(grant, dict):
+                debug_info[f"grant_{i}_skip_reason"] = f"Not a dict: {type(grant)}"
+                continue
+            if "name" not in grant:
+                debug_info[f"grant_{i}_skip_reason"] = "Missing name"
+                continue
+            if "provider" not in grant:
+                debug_info[f"grant_{i}_skip_reason"] = "Missing provider"
+                continue
+
+            # Validate that name and provider are strings
+            if not isinstance(grant.get("name"), str):
+                debug_info[f"grant_{i}_skip_reason"] = f"Name not string: {type(grant.get('name'))}"
+                continue
+            if not isinstance(grant.get("provider"), str):
+                debug_info[f"grant_{i}_skip_reason"] = f"Provider not string: {type(grant.get('provider'))}"
+                continue
+
             grant["source_url"] = source["url"]
             grant["source_name"] = source["name"]
             grant["source_type"] = source["type"]
             # Generate deterministic ID
             grant["external_id"] = generate_grant_id(grant["name"], grant["provider"])
+            valid_grants.append(grant)
 
-        print(f"Extracted {len(grants)} grants from {source['name']}")
-        return grants
+        print(f"Extracted {len(valid_grants)} grants from {source['name']}")
+        return {"grants": valid_grants, "debug": debug_info}
 
     except json.JSONDecodeError as e:
+        debug_info["json_error"] = str(e)
+        debug_info["json_text_preview"] = json_text[:500] if json_text else "N/A"
+        debug_info["response_text_preview"] = response_text[:1000] if response_text else "N/A"
         print(f"JSON parse error for {source['url']}: {e}")
-        return []
+        return {"grants": [], "debug": debug_info}
     except Exception as e:
+        import traceback
+        debug_info["claude_error"] = str(e)
+        debug_info["error_traceback"] = traceback.format_exc()
+        debug_info["response_text_preview"] = response_text[:1000] if response_text else "N/A"
+        debug_info["json_text_preview"] = json_text[:500] if json_text else "N/A"
         print(f"Claude extraction error for {source['url']}: {e}")
-        return []
+        print(traceback.format_exc())
+        return {"grants": [], "debug": debug_info}
 
 
 @app.function(
@@ -242,17 +356,17 @@ def upsert_grants(grants: list[dict]) -> dict:
 
     for grant in grants:
         try:
-            # Check if grant exists by external_id
+            # Check if grant exists by name + provider combination
             existing = (
                 client.table("grants")
                 .select("id")
-                .eq("external_id", grant["external_id"])
+                .eq("name", grant["name"])
+                .eq("provider", grant["provider"])
                 .execute()
             )
 
-            # Prepare grant data for database
+            # Prepare grant data for database (no external_id column in schema)
             grant_data = {
-                "external_id": grant["external_id"],
                 "name": grant["name"],
                 "provider": grant["provider"],
                 "amount_min": grant.get("amount_min"),
@@ -271,8 +385,8 @@ def upsert_grants(grants: list[dict]) -> dict:
             if existing.data and len(existing.data) > 0:
                 # Update existing grant
                 client.table("grants").update(grant_data).eq(
-                    "external_id", grant["external_id"]
-                ).execute()
+                    "name", grant["name"]
+                ).eq("provider", grant["provider"]).execute()
                 updated += 1
             else:
                 # Insert new grant
@@ -304,11 +418,14 @@ async def run_full_scrape() -> dict:
     # Scrape all sources
     for source in GRANT_SOURCES:
         try:
-            grants = await scrape_and_extract.remote.aio(source)
+            result = await scrape_and_extract.remote.aio(source)
+            grants = result.get("grants", [])
+            debug = result.get("debug", {})
             all_grants.extend(grants)
             source_results[source["name"]] = {
                 "grants_found": len(grants),
                 "status": "success",
+                "debug": debug,
             }
         except Exception as e:
             print(f"Error scraping {source['name']}: {e}")
