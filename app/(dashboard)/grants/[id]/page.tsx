@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { WatchlistButton } from '@/components/watchlist';
 import type { Grant, ApplicationQuestion } from '@/types';
 
 interface PageProps {
@@ -278,6 +279,12 @@ export default async function GrantDetailPage({ params }: PageProps) {
             </svg>
           </Link>
         </Button>
+
+        <WatchlistButton
+          grantId={grant.id}
+          grantName={grant.name}
+          variant="button"
+        />
 
         {grant.url && (
           <Button asChild variant="outline" size="lg">
