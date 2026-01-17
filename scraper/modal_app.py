@@ -19,6 +19,7 @@ image = modal.Image.debian_slim(python_version="3.11").pip_install(
     "playwright>=1.40.0",
     "beautifulsoup4>=4.12.0",
     "httpx>=0.25.0",
+    "fastapi>=0.109.0",
 )
 
 # Create Modal app
@@ -361,7 +362,7 @@ async def main():
         modal.Secret.from_name("supabase-credentials"),
     ],
 )
-@modal.web_endpoint(method="POST")
+@modal.fastapi_endpoint(method="POST")
 async def trigger_scrape():
     """HTTP endpoint to trigger scrape manually."""
     result = await run_full_scrape.remote.aio()
