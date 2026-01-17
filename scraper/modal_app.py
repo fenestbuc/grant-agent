@@ -110,6 +110,7 @@ For each grant found, extract:
   - states: Array of eligible states (empty array if all states)
   - entity_types: Array of eligible entity types
 - application_url: Direct application link (or null)
+- contact_email: Email address for inquiries/POC (or null if not found). Look for email addresses mentioned in contact sections, helpdesk info, or application guidelines.
 - is_active: boolean (true if currently accepting applications)
 
 Return ONLY a valid JSON array. If no grants found, return empty array [].
@@ -135,6 +136,7 @@ Example output:
       "entity_types": ["private_limited", "llp", "partnership"]
     }},
     "application_url": "https://seedfund.startupindia.gov.in/apply",
+    "contact_email": "seedfund@startupindia.gov.in",
     "is_active": true
   }}
 ]
@@ -389,6 +391,7 @@ def upsert_grants(grants: list[dict]) -> dict:
                 "stages": grant.get("stages", []),
                 "eligibility_criteria": grant.get("eligibility_criteria", {}),
                 "url": grant.get("application_url") or grant.get("source_url", ""),
+                "contact_email": grant.get("contact_email"),
                 "is_active": grant.get("is_active", True),
                 "updated_at": datetime.utcnow().isoformat(),
             }
