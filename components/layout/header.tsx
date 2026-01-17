@@ -17,6 +17,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { NotificationBell } from '@/components/notifications';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface HeaderProps {
   startup: { id: string; name: string };
@@ -101,6 +102,7 @@ export function Header({ startup, userEmail }: HeaderProps) {
 
         {/* User menu */}
         <div className="flex items-center gap-x-4 lg:gap-x-6">
+          <ThemeToggle />
           <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
