@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { LogoUpload } from '@/components/settings/logo-upload';
+import { DeleteAccountModal } from '@/components/settings/delete-account-modal';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -180,12 +181,27 @@ export default async function SettingsPage() {
           <CardTitle className="text-destructive">Danger Zone</CardTitle>
           <CardDescription>Irreversible actions</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form action="/auth/signout" method="post">
-            <Button variant="outline" type="submit">
-              Sign Out
-            </Button>
-          </form>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Sign Out</p>
+              <p className="text-sm text-muted-foreground">Sign out of your account on this device</p>
+            </div>
+            <form action="/auth/signout" method="post">
+              <Button variant="outline" type="submit">
+                Sign Out
+              </Button>
+            </form>
+          </div>
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Delete Account</p>
+                <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
+              </div>
+              <DeleteAccountModal />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
