@@ -68,3 +68,19 @@ Copy `.env.example` to `.env.local`. Required services:
 ## Type Definitions
 
 All database and API types in `types/index.ts`. Key types: `Grant`, `Startup`, `KBDocument`, `KBChunk`, `Application`, `EligibilityCriteria`.
+
+## Scraper (Modal + Crawl4AI)
+
+Python serverless scraper in `scraper/`:
+- `modal_app.py` - Main scraper using Crawl4AI and Claude for extraction
+- Deploys to Modal.com (scales to zero)
+- Triggered weekly via Vercel Cron or manually via `/api/cron/trigger-scrape`
+
+Setup: See `scraper/README.md` for Modal secrets configuration.
+
+## Database Seeding
+
+- `supabase/seed.sql` - Initial 12 grants (government schemes)
+- `supabase/seed_additional_grants.sql` - Additional 15 grants (state + CSR)
+
+Run via Supabase SQL Editor or CLI after migrations.
