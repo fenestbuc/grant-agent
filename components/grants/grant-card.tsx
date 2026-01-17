@@ -3,15 +3,14 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { WatchlistButton } from '@/components/watchlist';
 import type { Grant } from '@/types';
 
 interface GrantCardProps {
   grant: Grant;
-  onAddToWatchlist?: (grantId: string) => void;
-  isInWatchlist?: boolean;
 }
 
-export function GrantCard({ grant, onAddToWatchlist, isInWatchlist }: GrantCardProps) {
+export function GrantCard({ grant }: GrantCardProps) {
   const formatAmount = (amount: number | null) => {
     if (!amount) return null;
     if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Cr`;
@@ -46,11 +45,14 @@ export function GrantCard({ grant, onAddToWatchlist, isInWatchlist }: GrantCardP
           <Badge className={providerTypeColors[grant.provider_type] || ''} variant="secondary">
             {grant.provider_type.charAt(0).toUpperCase() + grant.provider_type.slice(1)}
           </Badge>
-          {grant.deadline && (
-            <span className="text-xs text-muted-foreground">
-              {formatDeadline(grant.deadline)}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {grant.deadline && (
+              <span className="text-xs text-muted-foreground">
+                {formatDeadline(grant.deadline)}
+              </span>
+            )}
+            <WatchlistButton grantId={grant.id} grantName={grant.name} variant="icon" />
+          </div>
         </div>
         <CardTitle className="text-lg line-clamp-2 mt-2">
           <Link href={`/grants/${grant.id}`} className="hover:text-primary transition-colors">
@@ -96,33 +98,10 @@ export function GrantCard({ grant, onAddToWatchlist, isInWatchlist }: GrantCardP
         )}
 
         {/* Actions */}
-        <div className="mt-auto flex gap-2">
-          <Button asChild className="flex-1">
+        <div className="mt-auto">
+          <Button asChild className="w-full">
             <Link href={`/grants/${grant.id}`}>View Details</Link>
           </Button>
-          {onAddToWatchlist && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onAddToWatchlist(grant.id)}
-              className={isInWatchlist ? 'text-red-500' : ''}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill={isInWatchlist ? 'currentColor' : 'none'}
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>
