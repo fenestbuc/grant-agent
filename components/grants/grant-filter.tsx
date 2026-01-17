@@ -102,7 +102,7 @@ export function GrantFilter() {
   const activeFilterCount =
     currentSectors.length + currentStages.length + currentProviderTypes.length;
 
-  const FilterContent = () => (
+  const filterContent = (
     <div className="space-y-6">
       {/* Sectors */}
       <div>
@@ -236,7 +236,7 @@ export function GrantFilter() {
               <SheetTitle>Filter Grants</SheetTitle>
             </SheetHeader>
             <div className="mt-4">
-              <FilterContent />
+              {filterContent}
             </div>
           </SheetContent>
         </Sheet>
