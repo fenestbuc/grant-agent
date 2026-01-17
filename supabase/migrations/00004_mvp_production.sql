@@ -14,7 +14,7 @@ ALTER TABLE startups ADD COLUMN IF NOT EXISTS last_application_date DATE;
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS answer_edits (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id UUID NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
   question_id TEXT NOT NULL,
   original_answer TEXT NOT NULL,
@@ -54,7 +54,7 @@ CREATE POLICY "Users can insert own answer edits" ON answer_edits
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS user_submitted_grants (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   startup_id UUID NOT NULL REFERENCES startups(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   is_google_form BOOLEAN DEFAULT false,
