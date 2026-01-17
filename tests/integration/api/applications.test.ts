@@ -10,7 +10,7 @@ import { createStartupFixture } from '@/tests/fixtures/startups';
 import type { Application, Startup } from '@/types';
 
 // Use vi.hoisted to define mock functions that can be used in vi.mock factories
-const { mockSupabaseClient, mockAnthropicCreate, mockGenerateQueryEmbedding } = vi.hoisted(() => {
+const { mockSupabaseClient, mockOpenAICreate, mockGenerateQueryEmbedding } = vi.hoisted(() => {
   return {
     mockSupabaseClient: {
       auth: {
@@ -19,7 +19,7 @@ const { mockSupabaseClient, mockAnthropicCreate, mockGenerateQueryEmbedding } = 
       from: vi.fn(),
       rpc: vi.fn(),
     },
-    mockAnthropicCreate: vi.fn(),
+    mockOpenAICreate: vi.fn(),
     mockGenerateQueryEmbedding: vi.fn(),
   };
 });
@@ -29,12 +29,14 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
 }));
 
-// Mock the Anthropic SDK with a proper class mock
-vi.mock('@anthropic-ai/sdk', () => {
+// Mock the OpenAI SDK with a proper class mock
+vi.mock('openai', () => {
   return {
-    default: class MockAnthropic {
-      messages = {
-        create: mockAnthropicCreate,
+    default: class MockOpenAI {
+      chat = {
+        completions: {
+          create: mockOpenAICreate,
+        },
       };
     },
   };
@@ -589,11 +591,12 @@ describe('/api/applications', () => {
     beforeEach(() => {
       // Set up default mocks for generate endpoint
       mockGenerateQueryEmbedding.mockResolvedValue([0.1, 0.2, 0.3]); // Mock embedding
-      mockAnthropicCreate.mockResolvedValue({
-        content: [
+      mockOpenAICreate.mockResolvedValue({
+        choices: [
           {
-            type: 'text',
-            text: 'This is a generated answer based on your startup profile and documents.',
+            message: {
+              content: 'This is a generated answer based on your startup profile and documents.',
+            },
           },
         ],
       });
@@ -626,7 +629,12 @@ describe('/api/applications', () => {
         if (table === 'kb_documents') return documentsBuilder;
         return createMockQueryBuilder();
       });
-      mockSupabaseClient.rpc.mockResolvedValue({ data: mockChunks, error: null });
+      // Mock both match_kb_chunks and increment_answers_generated RPC calls
+      mockSupabaseClient.rpc.mockImplementation((funcName: string) => {
+        if (funcName === 'match_kb_chunks') return Promise.resolve({ data: mockChunks, error: null });
+        if (funcName === 'increment_answers_generated') return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: null, error: null });
+      });
 
       const request = new NextRequest('http://localhost:3000/api/applications/generate', {
         method: 'POST',
@@ -660,8 +668,8 @@ describe('/api/applications', () => {
         match_count: 5,
       });
 
-      // Verify Claude was called
-      expect(mockAnthropicCreate).toHaveBeenCalled();
+      // Verify OpenAI was called
+      expect(mockOpenAICreate).toHaveBeenCalled();
     });
 
     it('generates answer without documents when none are relevant', async () => {
@@ -674,7 +682,12 @@ describe('/api/applications', () => {
         if (table === 'kb_documents') return documentsBuilder;
         return createMockQueryBuilder();
       });
-      mockSupabaseClient.rpc.mockResolvedValue({ data: [], error: null });
+      // Mock both match_kb_chunks and increment_answers_generated RPC calls
+      mockSupabaseClient.rpc.mockImplementation((funcName: string) => {
+        if (funcName === 'match_kb_chunks') return Promise.resolve({ data: [], error: null });
+        if (funcName === 'increment_answers_generated') return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: null, error: null });
+      });
 
       const request = new NextRequest('http://localhost:3000/api/applications/generate', {
         method: 'POST',
@@ -762,7 +775,7 @@ describe('/api/applications', () => {
         return createMockQueryBuilder();
       });
       mockSupabaseClient.rpc.mockResolvedValue({ data: [], error: null });
-      mockAnthropicCreate.mockRejectedValue(new Error('API rate limit exceeded'));
+      mockOpenAICreate.mockRejectedValue(new Error('API rate limit exceeded'));
 
       const request = new NextRequest('http://localhost:3000/api/applications/generate', {
         method: 'POST',
@@ -778,7 +791,7 @@ describe('/api/applications', () => {
       expect(result).toHaveProperty('error', 'Answer generation failed');
     });
 
-    it('handles unexpected response format from Claude', async () => {
+    it('handles unexpected response format from OpenAI', async () => {
       // Arrange
       const startupBuilder = createMockQueryBuilder({ data: mockStartup });
       const documentsBuilder = createMockQueryBuilder({ data: [] });
@@ -789,14 +802,9 @@ describe('/api/applications', () => {
       });
       mockSupabaseClient.rpc.mockResolvedValue({ data: [], error: null });
 
-      // Return non-text response
-      mockAnthropicCreate.mockResolvedValue({
-        content: [
-          {
-            type: 'tool_use', // Not a text response
-            id: 'tool-123',
-          },
-        ],
+      // Return empty choices array
+      mockOpenAICreate.mockResolvedValue({
+        choices: [],
       });
 
       const request = new NextRequest('http://localhost:3000/api/applications/generate', {
@@ -813,7 +821,7 @@ describe('/api/applications', () => {
       expect(result).toHaveProperty('error', 'Answer generation failed');
     });
 
-    it('uses provided maxLength in Claude prompt', async () => {
+    it('uses provided maxLength in OpenAI prompt', async () => {
       // Arrange
       const startupBuilder = createMockQueryBuilder({ data: mockStartup });
       const documentsBuilder = createMockQueryBuilder({ data: [] });
@@ -822,7 +830,12 @@ describe('/api/applications', () => {
         if (table === 'kb_documents') return documentsBuilder;
         return createMockQueryBuilder();
       });
-      mockSupabaseClient.rpc.mockResolvedValue({ data: [], error: null });
+      // Mock both match_kb_chunks and increment_answers_generated RPC calls
+      mockSupabaseClient.rpc.mockImplementation((funcName: string) => {
+        if (funcName === 'match_kb_chunks') return Promise.resolve({ data: [], error: null });
+        if (funcName === 'increment_answers_generated') return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: null, error: null });
+      });
 
       const request = new NextRequest('http://localhost:3000/api/applications/generate', {
         method: 'POST',
@@ -838,14 +851,14 @@ describe('/api/applications', () => {
 
       // Assert
       expect(response.status).toBe(200);
-      expect(mockAnthropicCreate).toHaveBeenCalledWith(
+      expect(mockOpenAICreate).toHaveBeenCalledWith(
         expect.objectContaining({
           max_tokens: 1000, // maxLength * 2 capped at 4000
         })
       );
     });
 
-    it('includes grant name in Claude prompt when provided', async () => {
+    it('includes grant name in OpenAI prompt when provided', async () => {
       // Arrange
       const startupBuilder = createMockQueryBuilder({ data: mockStartup });
       const documentsBuilder = createMockQueryBuilder({ data: [] });
@@ -854,7 +867,12 @@ describe('/api/applications', () => {
         if (table === 'kb_documents') return documentsBuilder;
         return createMockQueryBuilder();
       });
-      mockSupabaseClient.rpc.mockResolvedValue({ data: [], error: null });
+      // Mock both match_kb_chunks and increment_answers_generated RPC calls
+      mockSupabaseClient.rpc.mockImplementation((funcName: string) => {
+        if (funcName === 'match_kb_chunks') return Promise.resolve({ data: [], error: null });
+        if (funcName === 'increment_answers_generated') return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: null, error: null });
+      });
 
       const request = new NextRequest('http://localhost:3000/api/applications/generate', {
         method: 'POST',
@@ -871,7 +889,7 @@ describe('/api/applications', () => {
       // Assert
       expect(response.status).toBe(200);
       // Verify the prompt includes the grant name
-      expect(mockAnthropicCreate).toHaveBeenCalledWith(
+      expect(mockOpenAICreate).toHaveBeenCalledWith(
         expect.objectContaining({
           messages: expect.arrayContaining([
             expect.objectContaining({
