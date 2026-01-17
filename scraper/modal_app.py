@@ -467,9 +467,9 @@ async def run_full_scrape() -> dict:
     }
 
 
-@app.function(schedule=modal.Cron("0 6 * * 1"))  # Every Monday at 6 AM UTC
+@app.function(schedule=modal.Cron("0 0 * * *"))  # Every day at midnight UTC (5:30 AM IST)
 async def scheduled_scrape():
-    """Scheduled weekly scrape."""
+    """Scheduled nightly scrape."""
     result = await run_full_scrape.remote.aio()
     print(f"Scheduled scrape completed: {json.dumps(result, indent=2)}")
     return result

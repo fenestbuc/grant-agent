@@ -57,7 +57,9 @@ curl -X POST https://your-app--trigger-scrape.modal.run
 
 ### Scheduled Runs
 
-The scraper runs automatically every Monday at 6 AM UTC via the `scheduled_scrape` function.
+The scraper runs automatically every night at midnight UTC (5:30 AM IST) via:
+- **Vercel Cron**: Triggers `/api/cron/trigger-scrape` which calls the Modal webhook
+- **Modal Schedule**: Backup schedule via the `scheduled_scrape` function
 
 ## Grant Sources
 

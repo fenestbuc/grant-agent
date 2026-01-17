@@ -8,9 +8,11 @@ import { NextRequest, NextResponse } from 'next/server';
  * {
  *   "crons": [{
  *     "path": "/api/cron/trigger-scrape",
- *     "schedule": "0 6 * * 1"
+ *     "schedule": "0 0 * * *"
  *   }]
  * }
+ *
+ * Runs nightly at midnight UTC (5:30 AM IST).
  */
 export async function GET(request: NextRequest) {
   // Verify cron secret for Vercel Cron
