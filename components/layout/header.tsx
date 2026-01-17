@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { NotificationBell } from '@/components/notifications';
 
 interface HeaderProps {
   startup: { id: string; name: string };
@@ -100,6 +101,7 @@ export function Header({ startup, userEmail }: HeaderProps) {
 
         {/* User menu */}
         <div className="flex items-center gap-x-4 lg:gap-x-6">
+          <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
