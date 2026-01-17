@@ -455,6 +455,11 @@ export default function ApplicationPage({ params }: PageProps) {
                   onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
                   className="min-h-[200px] font-mono text-sm"
                 />
+                {errors[q.id] && (
+                  <p className="text-sm text-red-600 mt-2">
+                    {errors[q.id]} - Click &quot;Generate with AI&quot; to retry
+                  </p>
+                )}
                 {answers[q.id] && (
                   <p className="text-xs text-muted-foreground mt-2">
                     {answers[q.id].length} characters
