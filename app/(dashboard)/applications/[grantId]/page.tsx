@@ -194,6 +194,7 @@ export default function ApplicationPage({ params }: PageProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState<Record<string, boolean>>({});
   const [generated, setGenerated] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function fetchGrant() {
