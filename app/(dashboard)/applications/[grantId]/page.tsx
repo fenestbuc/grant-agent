@@ -208,23 +208,49 @@ export default function ApplicationPage({ params }: PageProps) {
     fetchGrant();
   }, [grantId]);
 
-  const generateAnswer = async (questionId: string, question: string) => {
+  const generateAnswer = async (questionId: string, question: string, maxLength?: number) => {
     setGenerating((prev) => ({ ...prev, [questionId]: true }));
+    setErrors((prev) => ({ ...prev, [questionId]: '' }));
 
-    // Simulate AI generation with typing effect
-    const fullAnswer = getPreseededAnswer(question);
-    let currentAnswer = '';
+    try {
+      // Call real AI generation API
+      const res = await fetch('/api/applications/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          grantName: grant?.name,
+          maxLength,
+        }),
+      });
 
-    // Type out the answer character by character (fast for demo)
-    for (let i = 0; i < fullAnswer.length; i += 3) {
-      currentAnswer = fullAnswer.slice(0, i + 3);
-      setAnswers((prev) => ({ ...prev, [questionId]: currentAnswer }));
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Generation failed');
+      }
+
+      const { data } = await res.json();
+      const fullAnswer = data.answer;
+
+      // Type out the answer character by character
+      let currentAnswer = '';
+      for (let i = 0; i < fullAnswer.length; i += 3) {
+        currentAnswer = fullAnswer.slice(0, i + 3);
+        setAnswers((prev) => ({ ...prev, [questionId]: currentAnswer }));
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+
+      setAnswers((prev) => ({ ...prev, [questionId]: fullAnswer }));
+      setGenerated((prev) => ({ ...prev, [questionId]: true }));
+    } catch (error) {
+      console.error('Generation error:', error);
+      setErrors((prev) => ({
+        ...prev,
+        [questionId]: error instanceof Error ? error.message : 'Generation failed',
+      }));
+    } finally {
+      setGenerating((prev) => ({ ...prev, [questionId]: false }));
     }
-
-    setAnswers((prev) => ({ ...prev, [questionId]: fullAnswer }));
-    setGenerating((prev) => ({ ...prev, [questionId]: false }));
-    setGenerated((prev) => ({ ...prev, [questionId]: true }));
   };
 
   const generateAllAnswers = async () => {
@@ -232,7 +258,7 @@ export default function ApplicationPage({ params }: PageProps) {
 
     for (const q of grant.application_questions) {
       if (!generated[q.id]) {
-        await generateAnswer(q.id, q.question);
+        await generateAnswer(q.id, q.question, q.max_length);
       }
     }
   };
@@ -361,7 +387,7 @@ export default function ApplicationPage({ params }: PageProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => generateAnswer(q.id, q.question)}
+                      onClick={() => generateAnswer(q.id, q.question, q.max_length)}
                       disabled={generating[q.id]}
                     >
                       {generating[q.id] ? (
