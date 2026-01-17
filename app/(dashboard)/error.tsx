@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -44,7 +45,7 @@ export default function DashboardError({
           <div className="flex gap-2 justify-center">
             <Button onClick={reset}>Try Again</Button>
             <Button variant="outline" asChild>
-              <a href="/">Go Home</a>
+              <Link href="/">Go Home</Link>
             </Button>
           </div>
         </CardContent>
