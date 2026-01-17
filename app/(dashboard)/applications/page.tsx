@@ -95,7 +95,7 @@ export default async function ApplicationsPage() {
                     )}
                   </div>
                   <Button asChild>
-                    <Link href={`/applications/${app.id}`}>
+                    <Link href={`/applications/${app.grant_id}`}>
                       Continue Application
                     </Link>
                   </Button>
@@ -142,7 +142,7 @@ export default async function ApplicationsPage() {
             {grants?.map((grant) => (
               <Link
                 key={grant.id}
-                href={`/applications/new/${grant.id}`}
+                href={`/applications/${grant.id}`}
                 className="flex items-center justify-between p-4 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 <div>
