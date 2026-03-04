@@ -2,390 +2,237 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useCallback, useEffect, useState, useRef } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import type { GrantCategory, GrantStatus } from '@/types';
 
-const SECTORS = [
-  { value: 'technology', label: 'Technology' },
-  { value: 'fintech', label: 'Fintech' },
-  { value: 'healthtech', label: 'Healthcare' },
-  { value: 'healthcare', label: 'Healthcare' },
-  { value: 'edtech', label: 'Education' },
-  { value: 'education', label: 'Education' },
-  { value: 'agriculture', label: 'Agriculture' },
-  { value: 'cleantech', label: 'CleanTech' },
-  { value: 'manufacturing', label: 'Manufacturing' },
-  { value: 'social_impact', label: 'Social Impact' },
+const CATEGORIES: GrantCategory[] = [
+  'Technology',
+  'Healthcare',
+  'Education',
+  'Environment',
+  'Social Impact',
+  'Research',
+  'Arts & Culture',
+  'Economic Development',
 ];
 
-const STAGES = [
-  { value: 'idea', label: 'Idea Stage' },
-  { value: 'prototype', label: 'Prototype' },
-  { value: 'mvp', label: 'MVP' },
-  { value: 'early_revenue', label: 'Early Revenue' },
-  { value: 'growth', label: 'Growth' },
-  { value: 'scaling', label: 'Scaling' },
-];
+const STATUSES: GrantStatus[] = ['open', 'closing_soon', 'closed'];
 
-const PROVIDER_TYPES = [
-  { value: 'government', label: 'Government' },
-  { value: 'csr', label: 'CSR / Corporate' },
-  { value: 'private', label: 'Private' },
-  { value: 'ngo', label: 'NGO' },
-];
-
-export function GrantFilter() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isOpen, setIsOpen] = useState(false);
-
-  const currentSectors = searchParams.getAll('sector');
-  const currentStages = searchParams.getAll('stage');
-  const currentProviderTypes = searchParams.getAll('provider_type');
-  const currentSearch = searchParams.get('search') || '';
-
-  const createQueryString = useCallback(
-    (updates: Record<string, string | string[] | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-
-      Object.entries(updates).forEach(([key, value]) => {
-        params.delete(key);
-        if (value === null) return;
-        if (Array.isArray(value)) {
-          value.forEach((v) => params.append(key, v));
-        } else {
-          params.set(key, value);
-        }
-      });
-
-      // Reset to page 1 when filters change
-      params.set('page', '1');
-
-      return params.toString();
-    },
-    [searchParams]
-  );
-
-  const handleSearchChange = (search: string) => {
-    router.push(`/grants?${createQueryString({ search: search || null })}`);
-  };
-
-  const handleFilterChange = (
-    type: 'sector' | 'stage' | 'provider_type',
-    value: string,
-    checked: boolean
-  ) => {
-    const current =
-      type === 'sector'
-        ? currentSectors
-        : type === 'stage'
-        ? currentStages
-        : currentProviderTypes;
-
-    const updated = checked
-      ? [...current, value]
-      : current.filter((v) => v !== value);
-
-    router.push(`/grants?${createQueryString({ [type]: updated.length ? updated : null })}`);
-  };
-
-  const clearFilters = () => {
-    router.push('/grants');
-    setIsOpen(false);
-  };
-
-  const activeFilterCount =
-    currentSectors.length + currentStages.length + currentProviderTypes.length;
-
-  const filterContent = (
-    <div className="space-y-6">
-      {/* Sectors */}
-      <div>
-        <Label className="text-sm font-medium">Sector</Label>
-        <div className="mt-2 space-y-2">
-          {SECTORS.map((sector) => (
-            <div key={sector.value} className="flex items-center space-x-2">
-              <Checkbox
-                id={`sector-${sector.value}`}
-                checked={currentSectors.includes(sector.value)}
-                onCheckedChange={(checked) =>
-                  handleFilterChange('sector', sector.value, checked === true)
-                }
-              />
-              <label
-                htmlFor={`sector-${sector.value}`}
-                className="text-sm cursor-pointer"
-              >
-                {sector.label}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Stages */}
-      <div>
-        <Label className="text-sm font-medium">Stage</Label>
-        <div className="mt-2 space-y-2">
-          {STAGES.map((stage) => (
-            <div key={stage.value} className="flex items-center space-x-2">
-              <Checkbox
-                id={`stage-${stage.value}`}
-                checked={currentStages.includes(stage.value)}
-                onCheckedChange={(checked) =>
-                  handleFilterChange('stage', stage.value, checked === true)
-                }
-              />
-              <label
-                htmlFor={`stage-${stage.value}`}
-                className="text-sm cursor-pointer"
-              >
-                {stage.label}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Provider Type */}
-      <div>
-        <Label className="text-sm font-medium">Grant Type</Label>
-        <div className="mt-2 space-y-2">
-          {PROVIDER_TYPES.map((type) => (
-            <div key={type.value} className="flex items-center space-x-2">
-              <Checkbox
-                id={`type-${type.value}`}
-                checked={currentProviderTypes.includes(type.value)}
-                onCheckedChange={(checked) =>
-                  handleFilterChange('provider_type', type.value, checked === true)
-                }
-              />
-              <label
-                htmlFor={`type-${type.value}`}
-                className="text-sm cursor-pointer"
-              >
-                {type.label}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {activeFilterCount > 0 && (
-        <>
-          <Separator />
-          <Button variant="outline" onClick={clearFilters} className="w-full">
-            Clear All Filters
-          </Button>
-        </>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="flex flex-col sm:flex-row gap-4">
-      {/* Search Input */}
-      <div className="flex-1">
-        <Input
-          placeholder="Search grants..."
-          defaultValue={currentSearch}
-          onChange={(e) => {
-            // Debounce search
-            const value = e.target.value;
-            const timeout = setTimeout(() => handleSearchChange(value), 300);
-            return () => clearTimeout(timeout);
-          }}
-          className="w-full"
-        />
-      </div>
-
-      {/* Mobile Filter Button */}
-      <div className="lg:hidden">
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-auto">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 mr-2"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-              </svg>
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="ml-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-                  {activeFilterCount}
-                </span>
-              )}
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left">
-            <SheetHeader>
-              <SheetTitle>Filter Grants</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4">
-              {filterContent}
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      {/* Desktop Sidebar Filter (rendered in parent) */}
-    </div>
-  );
+interface FilterState {
+  search: string;
+  categories: GrantCategory[];
+  statuses: GrantStatus[];
+  minAmount: string;
+  maxAmount: string;
+  deadline: string;
 }
 
-// Export FilterContent for desktop sidebar use
-export function GrantFilterSidebar() {
+interface GrantFilterProps {
+  onFilterChange?: (filters: FilterState) => void;
+}
+
+export function GrantFilter({ onFilterChange }: GrantFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const currentSectors = searchParams.getAll('sector');
-  const currentStages = searchParams.getAll('stage');
-  const currentProviderTypes = searchParams.getAll('provider_type');
+  const [filters, setFilters] = useState<FilterState>({
+    search: searchParams.get('search') || '',
+    categories: searchParams.getAll('category') as GrantCategory[],
+    statuses: searchParams.getAll('status') as GrantStatus[],
+    minAmount: searchParams.get('minAmount') || '',
+    maxAmount: searchParams.get('maxAmount') || '',
+    deadline: searchParams.get('deadline') || '',
+  });
 
-  const createQueryString = useCallback(
-    (updates: Record<string, string | string[] | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      Object.entries(updates).forEach(([key, value]) => {
-        params.delete(key);
-        if (value === null) return;
-        if (Array.isArray(value)) {
-          value.forEach((v) => params.append(key, v));
-        } else {
-          params.set(key, value);
-        }
-      });
-      params.set('page', '1');
-      return params.toString();
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const applyFilters = useCallback(
+    (currentFilters: FilterState) => {
+      const params = new URLSearchParams();
+      if (currentFilters.search) params.set('search', currentFilters.search);
+      if (currentFilters.minAmount) params.set('minAmount', currentFilters.minAmount);
+      if (currentFilters.maxAmount) params.set('maxAmount', currentFilters.maxAmount);
+      if (currentFilters.deadline) params.set('deadline', currentFilters.deadline);
+
+      // Append each category and status as separate params
+      currentFilters.categories.forEach(c => params.append('category', c));
+      currentFilters.statuses.forEach(s => params.append('status', s));
+
+      router.push(`/grants?${params.toString()}`);
+      onFilterChange?.(currentFilters);
     },
-    [searchParams]
+    [router, onFilterChange],
   );
 
-  const handleFilterChange = (
-    type: 'sector' | 'stage' | 'provider_type',
-    value: string,
-    checked: boolean
-  ) => {
-    const current =
-      type === 'sector'
-        ? currentSectors
-        : type === 'stage'
-        ? currentStages
-        : currentProviderTypes;
+  const handleSearchChange = (value: string) => {
+    const newFilters = { ...filters, search: value };
+    setFilters(newFilters);
 
-    const updated = checked
-      ? [...current, value]
-      : current.filter((v) => v !== value);
-
-    router.push(`/grants?${createQueryString({ [type]: updated.length ? updated : null })}`);
+    // Debounce search input
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      applyFilters(newFilters);
+    }, 400);
   };
 
-  const clearFilters = () => {
+  const handleCategoryToggle = (category: GrantCategory) => {
+    const newCategories = filters.categories.includes(category)
+      ? filters.categories.filter(c => c !== category)
+      : [...filters.categories, category];
+    const newFilters = { ...filters, categories: newCategories };
+    setFilters(newFilters);
+    applyFilters(newFilters);
+  };
+
+  const handleStatusChange = (status: GrantStatus) => {
+    const newStatuses = filters.statuses.includes(status)
+      ? filters.statuses.filter(s => s !== status)
+      : [...filters.statuses, status];
+    const newFilters = { ...filters, statuses: newStatuses };
+    setFilters(newFilters);
+    applyFilters(newFilters);
+  };
+
+  const handleAmountChange = (field: 'minAmount' | 'maxAmount', value: string) => {
+    const newFilters = { ...filters, [field]: value };
+    setFilters(newFilters);
+
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      applyFilters(newFilters);
+    }, 400);
+  };
+
+  const handleDeadlineChange = (value: string) => {
+    const newFilters = { ...filters, deadline: value };
+    setFilters(newFilters);
+    applyFilters(newFilters);
+  };
+
+  const handleReset = () => {
+    const resetFilters: FilterState = {
+      search: '',
+      categories: [],
+      statuses: [],
+      minAmount: '',
+      maxAmount: '',
+      deadline: '',
+    };
+    setFilters(resetFilters);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
     router.push('/grants');
+    onFilterChange?.(resetFilters);
   };
 
-  const activeFilterCount =
-    currentSectors.length + currentStages.length + currentProviderTypes.length;
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, []);
+
+  const hasActiveFilters =
+    filters.search ||
+    filters.categories.length > 0 ||
+    filters.statuses.length > 0 ||
+    filters.minAmount ||
+    filters.maxAmount ||
+    filters.deadline;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Filters</h3>
-        {activeFilterCount > 0 && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear all
-          </Button>
-        )}
-      </div>
+    <div className="space-y-4">
+      {/* Search */}
+      <Input
+        placeholder="Search grants..."
+        value={filters.search}
+        onChange={e => handleSearchChange(e.target.value)}
+        className="w-full"
+      />
 
-      {/* Sectors */}
-      <div>
-        <Label className="text-sm font-medium">Sector</Label>
-        <div className="mt-2 space-y-2">
-          {SECTORS.map((sector) => (
-            <div key={sector.value} className="flex items-center space-x-2">
-              <Checkbox
-                id={`desktop-sector-${sector.value}`}
-                checked={currentSectors.includes(sector.value)}
-                onCheckedChange={(checked) =>
-                  handleFilterChange('sector', sector.value, checked === true)
-                }
-              />
-              <label
-                htmlFor={`desktop-sector-${sector.value}`}
-                className="text-sm cursor-pointer"
+      <div className="flex flex-wrap gap-4">
+        {/* Categories */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Category</p>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map(category => (
+              <Badge
+                key={category}
+                variant={filters.categories.includes(category) ? 'default' : 'outline'}
+                className="cursor-pointer"
+                onClick={() => handleCategoryToggle(category)}
               >
-                {sector.label}
-              </label>
-            </div>
-          ))}
+                {category}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Status */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Status</p>
+          <div className="flex flex-wrap gap-2">
+            {STATUSES.map(status => (
+              <Badge
+                key={status}
+                variant={filters.statuses.includes(status) ? 'default' : 'outline'}
+                className="cursor-pointer"
+                onClick={() => handleStatusChange(status)}
+              >
+                {status}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Amount Range */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Amount Range</p>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Min"
+              value={filters.minAmount}
+              onChange={e => handleAmountChange('minAmount', e.target.value)}
+              className="w-24"
+              type="number"
+            />
+            <Input
+              placeholder="Max"
+              value={filters.maxAmount}
+              onChange={e => handleAmountChange('maxAmount', e.target.value)}
+              className="w-24"
+              type="number"
+            />
+          </div>
+        </div>
+
+        {/* Deadline */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Deadline Before</p>
+          <Input
+            type="date"
+            value={filters.deadline}
+            onChange={e => handleDeadlineChange(e.target.value)}
+            className="w-40"
+          />
         </div>
       </div>
 
-      <Separator />
-
-      {/* Stages */}
-      <div>
-        <Label className="text-sm font-medium">Stage</Label>
-        <div className="mt-2 space-y-2">
-          {STAGES.map((stage) => (
-            <div key={stage.value} className="flex items-center space-x-2">
-              <Checkbox
-                id={`desktop-stage-${stage.value}`}
-                checked={currentStages.includes(stage.value)}
-                onCheckedChange={(checked) =>
-                  handleFilterChange('stage', stage.value, checked === true)
-                }
-              />
-              <label
-                htmlFor={`desktop-stage-${stage.value}`}
-                className="text-sm cursor-pointer"
-              >
-                {stage.label}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Provider Type */}
-      <div>
-        <Label className="text-sm font-medium">Grant Type</Label>
-        <div className="mt-2 space-y-2">
-          {PROVIDER_TYPES.map((type) => (
-            <div key={type.value} className="flex items-center space-x-2">
-              <Checkbox
-                id={`desktop-type-${type.value}`}
-                checked={currentProviderTypes.includes(type.value)}
-                onCheckedChange={(checked) =>
-                  handleFilterChange('provider_type', type.value, checked === true)
-                }
-              />
-              <label
-                htmlFor={`desktop-type-${type.value}`}
-                className="text-sm cursor-pointer"
-              >
-                {type.label}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Reset */}
+      {hasActiveFilters && (
+        <Button variant="ghost" size="sm" onClick={handleReset}>
+          Clear all filters
+        </Button>
+      )}
     </div>
   );
 }
