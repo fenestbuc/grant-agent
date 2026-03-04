@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { LogoUpload } from '@/components/settings/logo-upload';
 import { DeleteAccountModal } from '@/components/settings/delete-account-modal';
+import { signOut } from '@/app/(auth)/actions';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -187,7 +188,7 @@ export default async function SettingsPage() {
               <p className="font-medium">Sign Out</p>
               <p className="text-sm text-muted-foreground">Sign out of your account on this device</p>
             </div>
-            <form action="/auth/signout" method="post">
+            <form action={signOut}>
               <Button variant="outline" type="submit">
                 Sign Out
               </Button>

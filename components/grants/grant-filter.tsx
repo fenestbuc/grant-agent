@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,9 +14,7 @@ const SECTORS = [
   { value: 'technology', label: 'Technology' },
   { value: 'fintech', label: 'Fintech' },
   { value: 'healthtech', label: 'Healthcare' },
-  { value: 'healthcare', label: 'Healthcare' },
   { value: 'edtech', label: 'Education' },
-  { value: 'education', label: 'Education' },
   { value: 'agriculture', label: 'Agriculture' },
   { value: 'cleantech', label: 'CleanTech' },
   { value: 'manufacturing', label: 'Manufacturing' },
@@ -43,6 +41,7 @@ export function GrantFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentSectors = searchParams.getAll('sector');
   const currentStages = searchParams.getAll('stage');
@@ -199,10 +198,11 @@ export function GrantFilter() {
           placeholder="Search grants..."
           defaultValue={currentSearch}
           onChange={(e) => {
-            // Debounce search
             const value = e.target.value;
-            const timeout = setTimeout(() => handleSearchChange(value), 300);
-            return () => clearTimeout(timeout);
+            if (searchTimeoutRef.current) {
+              clearTimeout(searchTimeoutRef.current);
+            }
+            searchTimeoutRef.current = setTimeout(() => handleSearchChange(value), 300);
           }}
           className="w-full"
         />

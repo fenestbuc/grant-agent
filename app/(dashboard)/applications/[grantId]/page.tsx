@@ -24,6 +24,8 @@ export default function ApplicationPage({ params }: PageProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState<Record<string, boolean>>({});
   const [usage, setUsage] = useState<UsageStatus | null>(null);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Fetch usage status
   const fetchUsage = useCallback(async () => {
@@ -47,9 +49,45 @@ export default function ApplicationPage({ params }: PageProps) {
       }
       setLoading(false);
     }
+    async function ensureApplication() {
+      try {
+        const res = await fetch('/api/applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ grant_id: grantId }),
+        });
+        if (res.ok) {
+          const { data } = await res.json();
+          setApplicationId(data.id);
+        }
+      } catch (error) {
+        console.error('Failed to create/fetch application:', error);
+      }
+    }
     fetchGrant();
+    ensureApplication();
     fetchUsage();
   }, [grantId, fetchUsage]);
+
+  const saveDraft = async () => {
+    if (!applicationId) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/applications/${applicationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          answers,
+          status: 'draft' 
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+    } catch (error) {
+      console.error('Save draft error:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Track answer edits
   const trackEdit = async (questionId: string, originalAnswer: string, editedAnswer: string) => {
@@ -297,7 +335,7 @@ export default function ApplicationPage({ params }: PageProps) {
                       </CardTitle>
                       <CardDescription className="mt-1">
                         {q.max_length && `Max ${q.max_length} characters`}
-                        {q.required && (q.max_length ? ' • ' : '')}
+                        {q.required && (q.max_length ? ' \u2022 ' : '')}
                         {q.required && 'Required'}
                       </CardDescription>
                     </div>
@@ -444,8 +482,13 @@ export default function ApplicationPage({ params }: PageProps) {
       {/* Actions */}
       {questions && questions.length > 0 && (
         <div className="flex gap-4 pt-4 border-t">
-          <Button variant="outline" className="flex-1">
-            Save as Draft
+          <Button 
+            variant="outline" 
+            className="flex-1" 
+            onClick={saveDraft}
+            disabled={saving || !applicationId}
+          >
+            {saving ? 'Saving...' : 'Save as Draft'}
           </Button>
           <Button asChild className="flex-1">
             <a href={grant.url} target="_blank" rel="noopener noreferrer">

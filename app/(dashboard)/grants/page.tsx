@@ -39,6 +39,22 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
   const sortBy = params.sort_by || 'created_at';
   const sortOrder = params.sort_order || 'desc';
 
+  function buildPaginationUrl(
+    targetPage: number,
+    search: string,
+    sectors: string[],
+    stages: string[],
+    providerTypes: string[]
+  ): string {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    sectors.forEach((s) => params.append('sector', s));
+    stages.forEach((s) => params.append('stage', s));
+    providerTypes.forEach((t) => params.append('provider_type', t));
+    params.set('page', String(targetPage));
+    return `/grants?${params.toString()}`;
+  }
+
   // Build query
   let query = supabase
     .from('grants')
@@ -110,13 +126,7 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
           >
             {page > 1 ? (
               <Link
-                href={`/grants?${new URLSearchParams({
-                  ...(search && { search }),
-                  ...Object.fromEntries(sectors.map((s) => ['sector', s])),
-                  ...Object.fromEntries(stages.map((s) => ['stage', s])),
-                  ...Object.fromEntries(providerTypes.map((t) => ['provider_type', t])),
-                  page: String(page - 1),
-                }).toString()}`}
+                href={buildPaginationUrl(page - 1, search, sectors, stages, providerTypes)}
               >
                 Previous
               </Link>
@@ -137,13 +147,7 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
           >
             {page < totalPages ? (
               <Link
-                href={`/grants?${new URLSearchParams({
-                  ...(search && { search }),
-                  ...Object.fromEntries(sectors.map((s) => ['sector', s])),
-                  ...Object.fromEntries(stages.map((s) => ['stage', s])),
-                  ...Object.fromEntries(providerTypes.map((t) => ['provider_type', t])),
-                  page: String(page + 1),
-                }).toString()}`}
+                href={buildPaginationUrl(page + 1, search, sectors, stages, providerTypes)}
               >
                 Next
               </Link>

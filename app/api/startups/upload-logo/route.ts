@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
     // Delete old logo if exists (different extension)
     if (startup.logo_url) {
       // Extract old path from URL
-      const oldPathMatch = startup.logo_url.match(/startup-logos\/(.+)$/);
+      const urlWithoutParams = startup.logo_url.split('?')[0];
+      const oldPathMatch = urlWithoutParams.match(/startup-logos\/(.+)$/);
       if (oldPathMatch && oldPathMatch[1] !== storagePath) {
         await supabase.storage.from('startup-logos').remove([oldPathMatch[1]]);
       }
@@ -135,7 +136,8 @@ export async function DELETE() {
     }
 
     // Extract path from URL and delete from storage
-    const pathMatch = startup.logo_url.match(/startup-logos\/(.+)$/);
+    const urlWithoutParams = startup.logo_url.split('?')[0];
+    const pathMatch = urlWithoutParams.match(/startup-logos\/(.+)$/);
     if (pathMatch) {
       await supabase.storage.from('startup-logos').remove([pathMatch[1]]);
     }

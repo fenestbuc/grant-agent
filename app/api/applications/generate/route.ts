@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { generateQueryEmbedding } from '@/lib/llm/document-processor';
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
+import { canGenerateAnswer, incrementAnswerCount } from '@/lib/usage-limits';
 
 let openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -12,9 +13,6 @@ function getOpenAI(): OpenAI {
   return openai;
 }
 
-// Usage limits
-const LIFETIME_ANSWER_LIMIT = 70;
-const DAILY_APPLICATION_LIMIT = 10;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -35,23 +33,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'No startup profile found' }, { status: 400 });
     }
 
-    // Check usage limits
-    const today = new Date().toISOString().split('T')[0];
-    const isNewDay = !startup.last_application_date || startup.last_application_date < today;
-    const currentAnswers = startup.answers_generated || 0;
-    const currentAppsToday = isNewDay ? 0 : (startup.applications_today || 0);
-
-    if (currentAnswers >= LIFETIME_ANSWER_LIMIT) {
+    // Get startup ID for usage checks
+    const usageCheck = await canGenerateAnswer(startup.id);
+    if (!usageCheck.allowed) {
       return NextResponse.json({
-        error: 'You have reached the lifetime limit of 70 AI-generated answers. Please contact support for more.',
-        code: 'LIFETIME_LIMIT_REACHED',
-      }, { status: 429 });
-    }
-
-    if (currentAppsToday >= DAILY_APPLICATION_LIMIT) {
-      return NextResponse.json({
-        error: 'You have reached the daily limit of 10 applications. Please try again tomorrow.',
-        code: 'DAILY_LIMIT_REACHED',
+        error: usageCheck.reason,
+        code: usageCheck.code,
       }, { status: 429 });
     }
 
@@ -150,7 +137,7 @@ Answer:`,
     }
 
     // Increment usage counter
-    await supabase.rpc('increment_answers_generated', { p_startup_id: startup.id });
+    await incrementAnswerCount(startup.id);
 
     // Build sources array
     const sources = chunks?.map((chunk: { document_id: string; content: string; similarity: number }) => ({
