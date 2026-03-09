@@ -13,20 +13,31 @@ interface GrantCardProps {
 
 export function GrantCard({ grant }: GrantCardProps) {
   const formatDeadline = (deadline: string | null) => {
-    if (!deadline) return 'Rolling';
+    if (!deadline) return { label: 'Rolling', color: 'text-muted-foreground' };
     const date = new Date(deadline);
     const now = new Date();
     const daysUntil = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (daysUntil < 0) return 'Expired';
-    if (daysUntil === 0) return 'Today';
-    if (daysUntil === 1) return 'Tomorrow';
-    if (daysUntil <= 7) return `${daysUntil} days left`;
-    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+    if (daysUntil < 0) return { label: 'Expired', color: 'text-muted-foreground' };
+    if (daysUntil === 0) return { label: 'Today', color: 'text-red-500 dark:text-red-400' };
+    if (daysUntil === 1) return { label: 'Tomorrow', color: 'text-red-500 dark:text-red-400' };
+    if (daysUntil <= 7) return { label: `${daysUntil} days left`, color: 'text-red-500 dark:text-red-400' };
+    if (daysUntil <= 30) return { label: `${daysUntil} days left`, color: 'text-amber-500 dark:text-amber-400' };
+    return {
+      label: date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+      color: 'text-emerald-600 dark:text-emerald-400',
+    };
   };
 
+
+  const deadline = formatDeadline(grant.deadline);
+  const deadline = formatDeadline(grant.deadline);
+
   return (
-    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
+    <Card className="group relative h-full flex flex-col cursor-pointer overflow-hidden border border-border hover:shadow-md hover:border-primary/20 transition-all duration-200">
+      {/* Subtle gradient top edge */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <Badge className={providerTypeColors[grant.provider_type] || ''} variant="secondary">
@@ -34,8 +45,8 @@ export function GrantCard({ grant }: GrantCardProps) {
           </Badge>
           <div className="flex items-center gap-2">
             {grant.deadline && (
-              <span className="text-xs text-muted-foreground">
-                {formatDeadline(grant.deadline)}
+              <span className={`text-xs font-medium ${deadline.color}`}>
+                {deadline.label}
               </span>
             )}
             <WatchlistButton grantId={grant.id} grantName={grant.name} variant="icon" />
@@ -57,7 +68,7 @@ export function GrantCard({ grant }: GrantCardProps) {
 
         {/* Amount Range */}
         <div className="mb-3">
-          <span className="text-lg font-semibold text-primary">
+          <span className="text-xl font-bold tracking-tight text-foreground">
             {grant.amount_min && grant.amount_max ? (
               `${formatAmount(grant.amount_min)} - ${formatAmount(grant.amount_max)}`
             ) : grant.amount_max ? (
