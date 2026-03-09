@@ -9,7 +9,7 @@ const navigation = [
     name: 'Dashboard',
     href: '/',
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect width="7" height="9" x="3" y="3" rx="1" />
         <rect width="7" height="5" x="14" y="3" rx="1" />
         <rect width="7" height="9" x="14" y="12" rx="1" />
@@ -21,7 +21,7 @@ const navigation = [
     name: 'Grants',
     href: '/grants',
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
         <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
         <path d="M12 18V6" />
@@ -32,7 +32,7 @@ const navigation = [
     name: 'Knowledge Base',
     href: '/kb',
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
       </svg>
     ),
@@ -41,7 +41,7 @@ const navigation = [
     name: 'Applications',
     href: '/applications',
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
         <polyline points="14 2 14 8 20 8" />
         <line x1="16" x2="8" y1="13" y2="13" />
@@ -54,7 +54,7 @@ const navigation = [
     name: 'Watchlist',
     href: '/watchlist',
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
       </svg>
     ),
@@ -63,7 +63,7 @@ const navigation = [
     name: 'Submit a Grant',
     href: '/submit-grant',
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 5v14M5 12h14" />
       </svg>
     ),
@@ -72,7 +72,7 @@ const navigation = [
     name: 'Settings',
     href: '/settings',
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
@@ -85,23 +85,34 @@ export function Sidebar() {
 
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-      <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 pb-4">
-        <div className="flex h-16 shrink-0 items-center">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="flex grow flex-col overflow-y-auto border-r border-border bg-card px-4 pb-4">
+        {/* Brand */}
+        <div className="flex h-16 shrink-0 items-center px-2">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
                 <path d="M12 18V6" />
               </svg>
             </div>
-            <span className="text-xl font-bold">Grants India</span>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold tracking-tight">Grants India</span>
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary ring-1 ring-inset ring-primary/20">
+                Beta
+              </span>
+            </div>
           </Link>
         </div>
+
+        {/* Separator */}
+        <div className="mx-2 mb-4 border-t border-border" />
+
+        {/* Navigation */}
         <nav className="flex flex-1 flex-col">
-          <ul role="list" className="flex flex-1 flex-col gap-y-7">
+          <ul role="list" className="flex flex-1 flex-col gap-y-1">
             <li>
-              <ul role="list" className="-mx-2 space-y-1">
+              <ul role="list" className="space-y-0.5">
                 {navigation.map((item) => {
                   const isActive = item.href === '/'
                     ? pathname === '/'
@@ -112,12 +123,15 @@ export function Sidebar() {
                       <Link
                         href={item.href}
                         className={cn(
-                          'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 transition-colors',
+                          'group relative flex items-center gap-x-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
                           isActive
-                            ? 'bg-slate-100 dark:bg-slate-700 text-primary'
-                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary'
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                         )}
                       >
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-primary" />
+                        )}
                         {item.icon}
                         {item.name}
                       </Link>
@@ -128,6 +142,13 @@ export function Sidebar() {
             </li>
           </ul>
         </nav>
+
+        {/* Bottom section */}
+        <div className="mx-2 border-t border-border pt-3">
+          <p className="px-3 text-xs text-muted-foreground/60">
+            v1.0 &middot; AI-Powered
+          </p>
+        </div>
       </div>
     </div>
   );

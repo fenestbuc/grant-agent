@@ -27,7 +27,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-background transition-colors">
       <Sidebar />
       <div className="lg:pl-64">
         <Header startup={startup} userEmail={user.email || ''} />
