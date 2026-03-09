@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
 /**
  * Trigger the Modal scraper via webhook.
@@ -22,17 +23,14 @@ export async function GET(request: NextRequest) {
   // Skip auth check in development
   if (process.env.NODE_ENV === 'production' && cronSecret) {
     if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
   }
 
   const webhookUrl = process.env.SCRAPER_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    return NextResponse.json(
-      { error: 'SCRAPER_WEBHOOK_URL not configured' },
-      { status: 500 }
-    );
+    return apiError('SCRAPER_WEBHOOK_URL not configured', 500);
   }
 
   try {
@@ -58,17 +56,13 @@ export async function GET(request: NextRequest) {
     const result = await response.json();
     console.log('Scraper triggered successfully:', result);
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       message: 'Scraper triggered',
       result,
     });
   } catch (error) {
     console.error('Failed to trigger scraper:', error);
-    return NextResponse.json(
-      { error: 'Failed to trigger scraper', details: String(error) },
-      { status: 500 }
-    );
+    return apiError('Failed to trigger scraper', 500);
   }
 }
 

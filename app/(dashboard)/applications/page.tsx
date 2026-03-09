@@ -1,9 +1,10 @@
-// app/(dashboard)/applications/page.tsx
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatAmount } from '@/lib/utils/format';
+import { statusColors } from '@/lib/utils/colors';
 
 export default async function ApplicationsPage() {
   const supabase = await createClient();
@@ -39,20 +40,6 @@ export default async function ApplicationsPage() {
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(5);
-
-  const formatAmount = (amount: number | null) => {
-    if (!amount) return null;
-    if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Cr`;
-    if (amount >= 100000) return `₹${(amount / 100000).toFixed(0)} L`;
-    return `₹${amount.toLocaleString('en-IN')}`;
-  };
-
-  const statusColors: Record<string, string> = {
-    draft: 'bg-slate-100 text-slate-800',
-    in_progress: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    submitted: 'bg-purple-100 text-purple-800',
-  };
 
   return (
     <div className="space-y-8">

@@ -1,15 +1,15 @@
-// app/api/watchlist/route.ts
 import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const { data: startup } = await supabase
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (!startup) {
-      return NextResponse.json({ error: 'No startup profile' }, { status: 400 });
+      return apiError('No startup profile', 400);
     }
 
     // Build query with optional filters
@@ -42,23 +42,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { data: watchlist, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
-    return NextResponse.json({ data: watchlist });
+    return apiSuccess(watchlist);
   } catch (error) {
     console.error('Watchlist list error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError('Internal server error', 500);
   }
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const { data: startup } = await supabase
@@ -68,13 +68,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (!startup) {
-      return NextResponse.json({ error: 'No startup profile' }, { status: 400 });
+      return apiError('No startup profile', 400);
     }
 
     const { grant_id, notify_deadline = true, notify_changes = true } = await request.json();
 
     if (!grant_id) {
-      return NextResponse.json({ error: 'grant_id required' }, { status: 400 });
+      return apiError('grant_id required', 400);
     }
 
     // Check if already exists
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (existing) {
-      return NextResponse.json({ data: existing, message: 'Already in watchlist' });
+      return apiSuccess(existing);
     }
 
     const { data: watchlistItem, error } = await supabase
@@ -101,12 +101,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
-    return NextResponse.json({ data: watchlistItem });
+    return apiSuccess(watchlistItem);
   } catch (error) {
     console.error('Watchlist add error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError('Internal server error', 500);
   }
 }

@@ -1,4 +1,3 @@
-// app/(dashboard)/grants/[id]/page.tsx
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
@@ -7,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { WatchlistButton } from '@/components/watchlist';
+import { formatAmount } from '@/lib/utils/format';
+import { providerTypeColors } from '@/lib/utils/colors';
 import type { Grant, ApplicationQuestion } from '@/types';
 
 interface PageProps {
@@ -26,20 +27,6 @@ export default async function GrantDetailPage({ params }: PageProps) {
   if (error || !grant) {
     notFound();
   }
-
-  const formatAmount = (amount: number | null) => {
-    if (!amount) return null;
-    if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Crore`;
-    if (amount >= 100000) return `₹${(amount / 100000).toFixed(0)} Lakhs`;
-    return `₹${amount.toLocaleString('en-IN')}`;
-  };
-
-  const providerTypeColors: Record<string, string> = {
-    government: 'bg-blue-100 text-blue-800',
-    csr: 'bg-green-100 text-green-800',
-    private: 'bg-purple-100 text-purple-800',
-    ngo: 'bg-orange-100 text-orange-800',
-  };
 
   const eligibility = grant.eligibility_criteria as Grant['eligibility_criteria'];
   const questions = grant.application_questions as ApplicationQuestion[];

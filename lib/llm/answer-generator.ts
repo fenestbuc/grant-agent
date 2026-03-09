@@ -17,6 +17,10 @@ interface GenerateAnswerOptions {
   question: string;
   context: AnswerSource[];
   startupName?: string;
+  /** Optional free-text startup profile context (e.g. sector, stage, traction) to enrich the prompt */
+  startupContext?: string;
+  /** Optional grant name so the answer can be tailored to the specific programme */
+  grantName?: string;
   tone?: 'professional' | 'conversational' | 'formal';
   maxLength?: number;
 }
@@ -29,12 +33,22 @@ export async function generateAnswer({
   question,
   context,
   startupName,
+  startupContext,
+  grantName,
   tone = 'professional',
   maxLength = 500,
 }: GenerateAnswerOptions): Promise<string> {
   const contextText = context
     .map((source) => `[From ${source.document_name}]:\n${source.chunk_content}`)
     .join('\n\n');
+
+  const startupProfileBlock = startupContext
+    ? `\n\nStartup profile context:\n${startupContext}`
+    : '';
+
+  const grantBlock = grantName
+    ? ` for the "${grantName}" grant programme`
+    : '';
 
   const toneInstructions = {
     professional:
@@ -66,10 +80,10 @@ Your answers should be compelling, specific, and directly address the question a
       },
       {
         role: 'user',
-        content: `You are helping ${startupName || 'a startup'} write a grant application answer.
+        content: `You are helping ${startupName || 'a startup'} write a grant application answer${grantBlock}.
 
 Question: ${question}
-
+${startupProfileBlock}
 Use the following context from the startup's knowledge base to craft a compelling answer:
 
 ${contextText || 'No documents provided - use the startup profile information.'}

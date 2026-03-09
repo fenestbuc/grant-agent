@@ -1,4 +1,3 @@
-// app/(dashboard)/watchlist/page.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -17,6 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatAmount } from '@/lib/utils/format';
+import { providerTypeColors } from '@/lib/utils/colors';
 import type { Watchlist, Grant } from '@/types';
 
 interface WatchlistItemWithGrant extends Watchlist {
@@ -105,13 +106,6 @@ export default function WatchlistPage() {
     }
   };
 
-  const formatAmount = (amount: number | null) => {
-    if (!amount) return null;
-    if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Cr`;
-    if (amount >= 100000) return `₹${(amount / 100000).toFixed(0)} L`;
-    return `₹${amount.toLocaleString('en-IN')}`;
-  };
-
   const getDaysUntilDeadline = (deadline: string | null): number | null => {
     if (!deadline) return null;
     const deadlineDate = new Date(deadline);
@@ -141,13 +135,6 @@ export default function WatchlistPage() {
       month: 'short',
       year: 'numeric',
     });
-  };
-
-  const providerTypeColors: Record<string, string> = {
-    government: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-    csr: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    private: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-    ngo: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
   };
 
   return (

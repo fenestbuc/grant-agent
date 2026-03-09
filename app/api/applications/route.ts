@@ -1,14 +1,14 @@
-// app/api/applications/route.ts
 import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET() {
   try {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const { data: startup } = await supabase
@@ -18,7 +18,7 @@ export async function GET(): Promise<NextResponse> {
       .single();
 
     if (!startup) {
-      return NextResponse.json({ error: 'No startup profile' }, { status: 400 });
+      return apiError('No startup profile', 400);
     }
 
     const { data: applications, error } = await supabase
@@ -31,23 +31,23 @@ export async function GET(): Promise<NextResponse> {
       .order('updated_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
-    return NextResponse.json({ data: applications });
+    return apiSuccess(applications);
   } catch (error) {
     console.error('Applications list error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError('Internal server error', 500);
   }
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const { data: startup } = await supabase
@@ -57,13 +57,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (!startup) {
-      return NextResponse.json({ error: 'No startup profile' }, { status: 400 });
+      return apiError('No startup profile', 400);
     }
 
     const { grant_id } = await request.json();
 
     if (!grant_id) {
-      return NextResponse.json({ error: 'grant_id required' }, { status: 400 });
+      return apiError('grant_id required', 400);
     }
 
     // Check if application already exists
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (existing) {
-      return NextResponse.json({ data: existing });
+      return apiSuccess(existing);
     }
 
     // Get grant questions to initialize answers
@@ -107,12 +107,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
-    return NextResponse.json({ data: application });
+    return apiSuccess(application);
   } catch (error) {
     console.error('Application create error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError('Internal server error', 500);
   }
 }
