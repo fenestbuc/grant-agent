@@ -6,6 +6,7 @@ import { GrantFilter, GrantFilterSidebar } from '@/components/grants/grant-filte
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { sanitizeSearchInput } from '@/lib/utils/sanitize';
 
 // Revalidate grants data every hour (grants don't change frequently)
 export const revalidate = 3600;
@@ -46,7 +47,10 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
     .eq('is_active', true);
 
   if (search) {
-    query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,provider.ilike.%${search}%`);
+    const sanitized = sanitizeSearchInput(search);
+    if (sanitized) {
+      query = query.or(`name.ilike.%${sanitized}%,description.ilike.%${sanitized}%,provider.ilike.%${sanitized}%`);
+    }
   }
 
   if (sectors.length > 0) {

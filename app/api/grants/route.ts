@@ -1,6 +1,7 @@
 // app/api/grants/route.ts
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeSearchInput } from '@/lib/utils/sanitize';
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -24,7 +25,10 @@ export async function GET(request: NextRequest) {
 
   // Apply search filter
   if (search) {
-    query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,provider.ilike.%${search}%`);
+    const sanitized = sanitizeSearchInput(search);
+    if (sanitized) {
+      query = query.or(`name.ilike.%${sanitized}%,description.ilike.%${sanitized}%,provider.ilike.%${sanitized}%`);
+    }
   }
 
   // Apply sector filter (grants where sectors array overlaps with requested sectors)

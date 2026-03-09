@@ -69,7 +69,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'No startup profile' }, { status: 400 });
     }
 
-    const updates = await request.json();
+    const body = await request.json();
+
+    // Only allow updating specific fields
+    const ALLOWED_FIELDS = ['status', 'answers', 'notes', 'match_score'] as const;
+    const updates: Record<string, unknown> = {};
+    for (const field of ALLOWED_FIELDS) {
+      if (field in body) {
+        updates[field] = body[field];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+    }
 
     const { data: application, error } = await supabase
       .from('applications')

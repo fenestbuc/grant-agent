@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { PDFParse } from 'pdf-parse';
+import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import type { ExtractedMetadata } from '@/types';
 
@@ -36,9 +36,8 @@ export async function extractTextFromFile(
   switch (fileType.toLowerCase()) {
     case 'pdf':
     case 'application/pdf':
-      const pdfParser = new PDFParse({ data: buffer });
-      const textResult = await pdfParser.getText();
-      return textResult.text;
+      const result = await pdfParse(buffer);
+      return result.text;
 
     case 'docx':
     case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
@@ -70,22 +69,7 @@ export async function extractMetadata(text: string): Promise<ExtractedMetadata> 
     messages: [
       {
         role: 'user',
-        content: `Analyze this startup document and extract key metadata. Return a JSON object with these fields (use null for missing info):
-
-{
-  "company_name": "string or null",
-  "sector": "string or null (e.g., fintech, healthtech, edtech, etc.)",
-  "product_description": "string or null (1-2 sentence summary)",
-  "key_achievements": ["array of strings or empty array"],
-  "team_info": "string or null (brief team description)",
-  "traction": "string or null (users, revenue, growth metrics)",
-  "funding_raised": "string or null"
-}
-
-Document text:
-${truncatedText}
-
-Return ONLY the JSON object, no other text.`,
+        content: `Analyze this startup document and extract key metadata. Return a JSON object with these fields (use null for missing info):\n\n{\n  "company_name": "string or null",\n  "sector": "string or null (e.g., fintech, healthtech, edtech, etc.)",\n  "product_description": "string or null (1-2 sentence summary)",\n  "key_achievements": ["array of strings or empty array"],\n  "team_info": "string or null (brief team description)",\n  "traction": "string or null (users, revenue, growth metrics)",\n  "funding_raised": "string or null"\n}\n\nDocument text:\n${truncatedText}\n\nReturn ONLY the JSON object, no other text.`,
       },
     ],
   });
