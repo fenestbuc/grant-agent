@@ -3,10 +3,12 @@ import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { GrantsGridClient } from '@/components/grants/grants-grid-client';
 import { GrantFilter, GrantFilterSidebar } from '@/components/grants/grant-filter';
+import { GrantsTabs } from '@/components/grants/grants-tabs';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { sanitizeSearchInput } from '@/lib/utils/sanitize';
+import type { GrantApplicationStatus } from '@/lib/utils/grant-status';
 
 // Revalidate grants data every hour (grants don't change frequently)
 export const revalidate = 3600;
@@ -18,6 +20,7 @@ interface PageProps {
     sector?: string | string[];
     stage?: string | string[];
     provider_type?: string | string[];
+    status?: string | string[];
     sort_by?: string;
     sort_order?: string;
   }>;
@@ -37,14 +40,25 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
     : params.provider_type
     ? [params.provider_type]
     : [];
+  const statuses: GrantApplicationStatus[] = (
+    Array.isArray(params.status)
+      ? params.status
+      : params.status
+      ? [params.status]
+      : []
+  ) as GrantApplicationStatus[];
   const sortBy = params.sort_by || 'created_at';
   const sortOrder = params.sort_order || 'desc';
 
   // Build query
   let query = supabase
     .from('grants')
-    .select('*', { count: 'exact' })
-    .eq('is_active', true);
+    .select('*', { count: 'exact' });
+
+  // If no status filter, default to only active grants
+  if (statuses.length === 0) {
+    query = query.eq('is_active', true);
+  }
 
   if (search) {
     const sanitized = sanitizeSearchInput(search);
@@ -63,6 +77,36 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
 
   if (providerTypes.length > 0) {
     query = query.in('provider_type', providerTypes);
+  }
+
+  // Apply status filter using deadline-based SQL logic
+  if (statuses.length > 0) {
+    const now = new Date().toISOString();
+    const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const orConditions: string[] = [];
+
+    for (const status of statuses) {
+      switch (status) {
+        case 'open':
+          orConditions.push(`and(deadline.gt.${sevenDaysFromNow},is_active.eq.true)`);
+          break;
+        case 'closing_soon':
+          orConditions.push(`and(deadline.gte.${now},deadline.lte.${sevenDaysFromNow},is_active.eq.true)`);
+          break;
+        case 'closed':
+          orConditions.push(`deadline.lt.${now}`);
+          orConditions.push('is_active.eq.false');
+          break;
+        case 'rolling':
+          orConditions.push('and(deadline.is.null,is_active.eq.true)');
+          break;
+      }
+    }
+
+    if (orConditions.length > 0) {
+      query = query.or(orConditions.join(','));
+    }
   }
 
   query = query.order(sortBy, { ascending: sortOrder === 'asc', nullsFirst: false });
@@ -119,6 +163,7 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
                   ...Object.fromEntries(sectors.map((s) => ['sector', s])),
                   ...Object.fromEntries(stages.map((s) => ['stage', s])),
                   ...Object.fromEntries(providerTypes.map((t) => ['provider_type', t])),
+                  ...Object.fromEntries(statuses.map((s) => ['status', s])),
                   page: String(page - 1),
                 }).toString()}`}
               >
@@ -146,6 +191,7 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
                   ...Object.fromEntries(sectors.map((s) => ['sector', s])),
                   ...Object.fromEntries(stages.map((s) => ['stage', s])),
                   ...Object.fromEntries(providerTypes.map((t) => ['provider_type', t])),
+                  ...Object.fromEntries(statuses.map((s) => ['status', s])),
                   page: String(page + 1),
                 }).toString()}`}
               >
@@ -206,24 +252,27 @@ export default async function GrantsPage({ searchParams }: PageProps) {
         <GrantFilter />
       </Suspense>
 
-      {/* Main Content */}
-      <div className="flex gap-8">
-        {/* Desktop Sidebar */}
-        <aside className="hidden lg:block w-64 shrink-0">
-          <div className="sticky top-24 border rounded-lg p-4">
-            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-              <GrantFilterSidebar />
+      {/* Tabs: All Grants | Recommended */}
+      <GrantsTabs>
+        {/* Main Content for "All Grants" tab */}
+        <div className="flex gap-8">
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:block w-64 shrink-0">
+            <div className="sticky top-24 border rounded-lg p-4">
+              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                <GrantFilterSidebar />
+              </Suspense>
+            </div>
+          </aside>
+
+          {/* Grants Grid */}
+          <div className="flex-1">
+            <Suspense fallback={<GrantsGridSkeleton />}>
+              <GrantsGrid searchParams={searchParams} />
             </Suspense>
           </div>
-        </aside>
-
-        {/* Grants Grid */}
-        <div className="flex-1">
-          <Suspense fallback={<GrantsGridSkeleton />}>
-            <GrantsGrid searchParams={searchParams} />
-          </Suspense>
         </div>
-      </div>
+      </GrantsTabs>
     </div>
   );
 }

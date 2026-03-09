@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { WatchlistButton } from '@/components/watchlist';
+import { computeGrantStatus, getStatusLabel, getStatusColor } from '@/lib/utils/grant-status';
 import type { Grant, ApplicationQuestion } from '@/types';
 
 interface PageProps {
@@ -41,6 +42,10 @@ export default async function GrantDetailPage({ params }: PageProps) {
     ngo: 'bg-orange-100 text-orange-800',
   };
 
+  const status = computeGrantStatus(grant);
+  const statusLabel = getStatusLabel(status);
+  const statusColor = getStatusColor(status);
+
   const eligibility = grant.eligibility_criteria as Grant['eligibility_criteria'];
   const questions = grant.application_questions as ApplicationQuestion[];
 
@@ -69,6 +74,9 @@ export default async function GrantDetailPage({ params }: PageProps) {
         <div className="flex flex-wrap items-center gap-2">
           <Badge className={providerTypeColors[grant.provider_type]} variant="secondary">
             {grant.provider_type.charAt(0).toUpperCase() + grant.provider_type.slice(1)}
+          </Badge>
+          <Badge className={statusColor} variant="secondary">
+            {statusLabel}
           </Badge>
           {grant.deadline && (
             <Badge variant="outline">

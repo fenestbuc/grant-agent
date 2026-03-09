@@ -39,6 +39,13 @@ const PROVIDER_TYPES = [
   { value: 'ngo', label: 'NGO' },
 ];
 
+const STATUSES = [
+  { value: 'open', label: 'Open' },
+  { value: 'closing_soon', label: 'Closing Soon' },
+  { value: 'rolling', label: 'Rolling' },
+  { value: 'closed', label: 'Closed' },
+];
+
 export function GrantFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,6 +54,7 @@ export function GrantFilter() {
   const currentSectors = searchParams.getAll('sector');
   const currentStages = searchParams.getAll('stage');
   const currentProviderTypes = searchParams.getAll('provider_type');
+  const currentStatuses = searchParams.getAll('status');
   const currentSearch = searchParams.get('search') || '';
 
   const createQueryString = useCallback(
@@ -76,7 +84,7 @@ export function GrantFilter() {
   };
 
   const handleFilterChange = (
-    type: 'sector' | 'stage' | 'provider_type',
+    type: 'sector' | 'stage' | 'provider_type' | 'status',
     value: string,
     checked: boolean
   ) => {
@@ -85,6 +93,8 @@ export function GrantFilter() {
         ? currentSectors
         : type === 'stage'
         ? currentStages
+        : type === 'status'
+        ? currentStatuses
         : currentProviderTypes;
 
     const updated = checked
@@ -100,10 +110,36 @@ export function GrantFilter() {
   };
 
   const activeFilterCount =
-    currentSectors.length + currentStages.length + currentProviderTypes.length;
+    currentSectors.length + currentStages.length + currentProviderTypes.length + currentStatuses.length;
 
   const filterContent = (
     <div className="space-y-6">
+      {/* Status */}
+      <div>
+        <Label className="text-sm font-medium">Status</Label>
+        <div className="mt-2 space-y-2">
+          {STATUSES.map((status) => (
+            <div key={status.value} className="flex items-center space-x-2">
+              <Checkbox
+                id={`status-${status.value}`}
+                checked={currentStatuses.includes(status.value)}
+                onCheckedChange={(checked) =>
+                  handleFilterChange('status', status.value, checked === true)
+                }
+              />
+              <label
+                htmlFor={`status-${status.value}`}
+                className="text-sm cursor-pointer"
+              >
+                {status.label}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
+
       {/* Sectors */}
       <div>
         <Label className="text-sm font-medium">Sector</Label>
@@ -255,6 +291,7 @@ export function GrantFilterSidebar() {
   const currentSectors = searchParams.getAll('sector');
   const currentStages = searchParams.getAll('stage');
   const currentProviderTypes = searchParams.getAll('provider_type');
+  const currentStatuses = searchParams.getAll('status');
 
   const createQueryString = useCallback(
     (updates: Record<string, string | string[] | null>) => {
@@ -275,7 +312,7 @@ export function GrantFilterSidebar() {
   );
 
   const handleFilterChange = (
-    type: 'sector' | 'stage' | 'provider_type',
+    type: 'sector' | 'stage' | 'provider_type' | 'status',
     value: string,
     checked: boolean
   ) => {
@@ -284,6 +321,8 @@ export function GrantFilterSidebar() {
         ? currentSectors
         : type === 'stage'
         ? currentStages
+        : type === 'status'
+        ? currentStatuses
         : currentProviderTypes;
 
     const updated = checked
@@ -298,7 +337,7 @@ export function GrantFilterSidebar() {
   };
 
   const activeFilterCount =
-    currentSectors.length + currentStages.length + currentProviderTypes.length;
+    currentSectors.length + currentStages.length + currentProviderTypes.length + currentStatuses.length;
 
   return (
     <div className="space-y-6">
@@ -310,6 +349,32 @@ export function GrantFilterSidebar() {
           </Button>
         )}
       </div>
+
+      {/* Status */}
+      <div>
+        <Label className="text-sm font-medium">Status</Label>
+        <div className="mt-2 space-y-2">
+          {STATUSES.map((status) => (
+            <div key={status.value} className="flex items-center space-x-2">
+              <Checkbox
+                id={`desktop-status-${status.value}`}
+                checked={currentStatuses.includes(status.value)}
+                onCheckedChange={(checked) =>
+                  handleFilterChange('status', status.value, checked === true)
+                }
+              />
+              <label
+                htmlFor={`desktop-status-${status.value}`}
+                className="text-sm cursor-pointer"
+              >
+                {status.label}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
 
       {/* Sectors */}
       <div>

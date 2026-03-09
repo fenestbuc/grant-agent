@@ -24,6 +24,9 @@ export default function ApplicationPage({ params }: PageProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState<Record<string, boolean>>({});
   const [usage, setUsage] = useState<UsageStatus | null>(null);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Fetch usage status
   const fetchUsage = useCallback(async () => {
@@ -50,6 +53,35 @@ export default function ApplicationPage({ params }: PageProps) {
     fetchGrant();
     fetchUsage();
   }, [grantId, fetchUsage]);
+
+  // Load existing draft on mount
+  useEffect(() => {
+    async function fetchExistingApplication() {
+      try {
+        const res = await fetch(`/api/applications?grant_id=${grantId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const apps = data.data;
+          if (apps && apps.length > 0) {
+            const app = apps[0];
+            setApplicationId(app.id);
+            // Restore saved answers
+            if (app.answers && Array.isArray(app.answers)) {
+              const savedAnswers: Record<string, string> = {};
+              app.answers.forEach((a: { question_id: string; edited_answer: string | null; generated_answer: string | null }) => {
+                savedAnswers[a.question_id] = a.edited_answer || a.generated_answer || '';
+              });
+              setAnswers(savedAnswers);
+              setOriginalAnswers(savedAnswers);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch existing application:', error);
+      }
+    }
+    fetchExistingApplication();
+  }, [grantId]);
 
   // Track answer edits
   const trackEdit = async (questionId: string, originalAnswer: string, editedAnswer: string) => {
@@ -135,6 +167,51 @@ export default function ApplicationPage({ params }: PageProps) {
       }));
     } finally {
       setGenerating((prev) => ({ ...prev, [questionId]: false }));
+    }
+  };
+
+  // Save as draft
+  const saveAsDraft = async () => {
+    if (!grant) return;
+    setSaving(true);
+    try {
+      const questions = grant.application_questions as ApplicationQuestion[];
+      const answersArray = questions.map((q) => ({
+        question_id: q.id,
+        question: q.question,
+        generated_answer: originalAnswers[q.id] || null,
+        edited_answer: answers[q.id] !== originalAnswers[q.id] ? answers[q.id] : null,
+        sources: [],
+        is_edited: answers[q.id] !== originalAnswers[q.id],
+      }));
+
+      if (applicationId) {
+        // Update existing
+        await fetch(`/api/applications/${applicationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers: answersArray, status: 'draft' }),
+        });
+      } else {
+        // Create new
+        const res = await fetch('/api/applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            grant_id: grantId,
+            answers: answersArray,
+            status: 'draft',
+          }),
+        });
+        const data = await res.json();
+        if (data.data?.id) setApplicationId(data.data.id);
+      }
+
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -444,8 +521,8 @@ export default function ApplicationPage({ params }: PageProps) {
       {/* Actions */}
       {questions && questions.length > 0 && (
         <div className="flex gap-4 pt-4 border-t">
-          <Button variant="outline" className="flex-1">
-            Save as Draft
+          <Button variant="outline" className="flex-1" onClick={saveAsDraft} disabled={saving}>
+            {saving ? 'Saving...' : lastSaved ? `Saved at ${lastSaved.toLocaleTimeString()}` : 'Save as Draft'}
           </Button>
           <Button asChild className="flex-1">
             <a href={grant.url} target="_blank" rel="noopener noreferrer">

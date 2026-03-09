@@ -14,14 +14,19 @@ export async function GET(request: NextRequest) {
   const sectors = searchParams.getAll('sector');
   const stages = searchParams.getAll('stage');
   const providerTypes = searchParams.getAll('provider_type');
+  const statuses = searchParams.getAll('status');
   const sortBy = searchParams.get('sort_by') || 'created_at';
   const sortOrder = searchParams.get('sort_order') || 'desc';
 
   // Build query
   let query = supabase
     .from('grants')
-    .select('*', { count: 'exact' })
-    .eq('is_active', true);
+    .select('*', { count: 'exact' });
+
+  // If no status filter includes 'closed', default to only active grants
+  if (statuses.length === 0) {
+    query = query.eq('is_active', true);
+  }
 
   // Apply search filter
   if (search) {
@@ -44,6 +49,40 @@ export async function GET(request: NextRequest) {
   // Apply provider type filter
   if (providerTypes.length > 0) {
     query = query.in('provider_type', providerTypes);
+  }
+
+  // Apply status filter using deadline-based SQL logic
+  if (statuses.length > 0) {
+    const now = new Date().toISOString();
+    const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const orConditions: string[] = [];
+
+    for (const status of statuses) {
+      switch (status) {
+        case 'open':
+          // deadline > now + 7 days AND is_active = true
+          orConditions.push(`and(deadline.gt.${sevenDaysFromNow},is_active.eq.true)`);
+          break;
+        case 'closing_soon':
+          // deadline between now and now + 7 days AND is_active = true
+          orConditions.push(`and(deadline.gte.${now},deadline.lte.${sevenDaysFromNow},is_active.eq.true)`);
+          break;
+        case 'closed':
+          // deadline < now OR is_active = false
+          orConditions.push(`deadline.lt.${now}`);
+          orConditions.push('is_active.eq.false');
+          break;
+        case 'rolling':
+          // deadline IS NULL AND is_active = true
+          orConditions.push('and(deadline.is.null,is_active.eq.true)');
+          break;
+      }
+    }
+
+    if (orConditions.length > 0) {
+      query = query.or(orConditions.join(','));
+    }
   }
 
   // Apply sorting
