@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatAmount } from '@/lib/utils/format';
+import { statusColors } from '@/lib/utils/colors';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -87,14 +89,6 @@ export default async function DashboardPage() {
   }
 
   const { data: recentGrants } = await recentGrantsQuery.limit(5);
-
-  // Status badge colors
-  const statusColors: Record<string, string> = {
-    draft: 'bg-slate-100 text-slate-800',
-    in_progress: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    submitted: 'bg-purple-100 text-purple-800',
-  };
 
   // Calculate days until deadline
   const getDaysUntil = (deadline: string) => {
@@ -413,7 +407,7 @@ export default async function DashboardPage() {
                       </div>
                       {grant.amount_max && (
                         <Badge variant="secondary" className="shrink-0">
-                          Up to {formatCurrency(grant.amount_max)}
+                          Up to {formatAmount(grant.amount_max)}
                         </Badge>
                       )}
                     </div>
@@ -449,12 +443,3 @@ export default async function DashboardPage() {
   );
 }
 
-function formatCurrency(amount: number): string {
-  if (amount >= 10000000) {
-    return `₹${(amount / 10000000).toFixed(1)} Cr`;
-  }
-  if (amount >= 100000) {
-    return `₹${(amount / 100000).toFixed(1)} L`;
-  }
-  return `₹${amount.toLocaleString('en-IN')}`;
-}

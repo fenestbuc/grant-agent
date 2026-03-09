@@ -1,8 +1,8 @@
-// app/api/kb/upload/route.ts
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { inngest } from '@/lib/inngest/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { extractTextFromFile, extractMetadata, chunkText, generateEmbeddings } from '@/lib/llm/document-processor';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/csv'];
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   // Check authentication
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return apiError('Unauthorized', 401);
   }
 
   // Get startup for this user
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!startup) {
-    return NextResponse.json({ error: 'No startup profile found' }, { status: 400 });
+    return apiError('No startup profile found', 400);
   }
 
   try {
@@ -41,28 +41,28 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return apiError('No file provided', 400);
     }
 
     // Validate empty file
     if (file.size === 0) {
-      return NextResponse.json({ error: 'File is empty' }, { status: 400 });
+      return apiError('File is empty', 400);
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 });
+      return apiError('File too large. Maximum size is 10MB.', 400);
     }
 
     // Validate file type (MIME)
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type. Allowed: PDF, DOCX, TXT, CSV' }, { status: 400 });
+      return apiError('Invalid file type. Allowed: PDF, DOCX, TXT, CSV', 400);
     }
 
     // Validate file extension as secondary check
     const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      return NextResponse.json({ error: 'Invalid file extension. Allowed: PDF, DOCX, TXT, CSV' }, { status: 400 });
+      return apiError('Invalid file extension. Allowed: PDF, DOCX, TXT, CSV', 400);
     }
 
     // Generate unique storage path
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       .upload(storagePath, file);
 
     if (uploadError) {
-      return NextResponse.json({ error: `Upload failed: ${uploadError.message}` }, { status: 500 });
+      return apiError(`Upload failed: ${uploadError.message}`, 500);
     }
 
     // Determine file type for processing using MIME map
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     if (dbError) {
       // Cleanup uploaded file
       await supabase.storage.from('kb-documents').remove([storagePath]);
-      return NextResponse.json({ error: `Database error: ${dbError.message}` }, { status: 500 });
+      return apiError(`Database error: ${dbError.message}`, 500);
     }
 
     // Try Inngest first, fall back to synchronous processing
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
             fileType,
           },
         });
-        return NextResponse.json({ data: document });
+        return apiSuccess(document);
       } catch (inngestError) {
         console.error('Inngest failed, falling back to sync processing:', inngestError);
         useInngest = false;
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
           .eq('id', document.id)
           .single();
 
-        return NextResponse.json({ data: updatedDoc || document });
+        return apiSuccess(updatedDoc || document);
       } catch (processError) {
         console.error('Document processing error:', processError);
         // Update status to failed
@@ -199,9 +199,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ data: document });
+    return apiSuccess(document);
   } catch (error) {
     console.error('Upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return apiError('Upload failed', 500);
   }
 }

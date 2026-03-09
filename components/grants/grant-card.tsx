@@ -1,9 +1,10 @@
-// components/grants/grant-card.tsx
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { WatchlistButton } from '@/components/watchlist';
+import { formatAmount } from '@/lib/utils/format';
+import { providerTypeColors } from '@/lib/utils/colors';
 import type { Grant } from '@/types';
 
 interface GrantCardProps {
@@ -11,13 +12,6 @@ interface GrantCardProps {
 }
 
 export function GrantCard({ grant }: GrantCardProps) {
-  const formatAmount = (amount: number | null) => {
-    if (!amount) return null;
-    if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Cr`;
-    if (amount >= 100000) return `₹${(amount / 100000).toFixed(0)} L`;
-    return `₹${amount.toLocaleString('en-IN')}`;
-  };
-
   const formatDeadline = (deadline: string | null) => {
     if (!deadline) return 'Rolling';
     const date = new Date(deadline);
@@ -29,13 +23,6 @@ export function GrantCard({ grant }: GrantCardProps) {
     if (daysUntil === 1) return 'Tomorrow';
     if (daysUntil <= 7) return `${daysUntil} days left`;
     return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
-  };
-
-  const providerTypeColors: Record<string, string> = {
-    government: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    csr: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    private: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-    ngo: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
   };
 
   return (

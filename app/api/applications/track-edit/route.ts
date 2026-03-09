@@ -1,14 +1,14 @@
-// app/api/applications/track-edit/route.ts
 import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const { data: startup } = await supabase
@@ -18,18 +18,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (!startup) {
-      return NextResponse.json({ error: 'No startup profile found' }, { status: 400 });
+      return apiError('No startup profile found', 400);
     }
 
     const { grantId, questionId, originalAnswer, editedAnswer } = await request.json();
 
     if (!grantId || !questionId || !originalAnswer || !editedAnswer) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return apiError('Missing required fields', 400);
     }
 
     // Don't track if answers are the same
     if (originalAnswer === editedAnswer) {
-      return NextResponse.json({ data: { tracked: false, reason: 'no_change' } });
+      return apiSuccess({ tracked: false, reason: 'no_change' });
     }
 
     // Find or create application for this grant
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       if (createError) {
         console.error('Error creating application:', createError);
-        return NextResponse.json({ error: 'Failed to create application' }, { status: 500 });
+        return apiError('Failed to create application', 500);
       }
 
       application = newApp;
@@ -73,17 +73,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (insertError) {
       console.error('Error tracking edit:', insertError);
-      return NextResponse.json({ error: 'Failed to track edit' }, { status: 500 });
+      return apiError('Failed to track edit', 500);
     }
 
-    return NextResponse.json({
-      data: {
-        tracked: true,
-        application_id: application.id,
-      },
+    return apiSuccess({
+      tracked: true,
+      application_id: application.id,
     });
   } catch (error) {
     console.error('Track edit error:', error);
-    return NextResponse.json({ error: 'Failed to track edit' }, { status: 500 });
+    return apiError('Failed to track edit', 500);
   }
 }

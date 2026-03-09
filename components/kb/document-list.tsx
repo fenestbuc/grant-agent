@@ -1,4 +1,3 @@
-// components/kb/document-list.tsx
 'use client';
 
 import { useState } from 'react';
@@ -16,6 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { documentStatusColors } from '@/lib/utils/colors';
 import type { KBDocument } from '@/types';
 
 interface DocumentListProps {
@@ -42,13 +42,6 @@ export function DocumentList({ documents, onDelete }: DocumentListProps) {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    processing: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    failed: 'bg-red-100 text-red-800',
   };
 
   const fileTypeIcons: Record<string, string> = {
@@ -108,7 +101,7 @@ export function DocumentList({ documents, onDelete }: DocumentListProps) {
               </div>
 
               <div className="flex items-center gap-2">
-                <Badge className={statusColors[doc.status]} variant="secondary">
+                <Badge className={documentStatusColors[doc.status]} variant="secondary">
                   {doc.status === 'processing' && (
                     <svg className="animate-spin -ml-1 mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
 export async function GET(
   request: NextRequest,
@@ -15,11 +16,8 @@ export async function GET(
     .single();
 
   if (error || !grant) {
-    return NextResponse.json(
-      { data: null, error: 'Grant not found' },
-      { status: 404 }
-    );
+    return apiError('Grant not found', 404);
   }
 
-  return NextResponse.json({ data: grant, error: null });
+  return apiSuccess(grant);
 }
