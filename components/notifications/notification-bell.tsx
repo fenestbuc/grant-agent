@@ -95,10 +95,46 @@ export function NotificationBell({ className }: NotificationBellProps) {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Poll for new notifications every 60 seconds
+  // Poll for new notifications, pausing when tab is not visible
   useEffect(() => {
-    const interval = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (interval) clearInterval(interval);
+      interval = setInterval(fetchNotifications, 60000);
+    };
+
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNotifications(); // Fetch immediately when tab becomes visible
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    // Start polling if tab is visible
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      startPolling();
+    }
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    return () => {
+      stopPolling();
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+    };
   }, [fetchNotifications]);
 
   const handleMarkAllRead = async () => {
