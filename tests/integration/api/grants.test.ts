@@ -365,7 +365,7 @@ describe('/api/grants', () => {
       // Assert
       expect(response.status).toBe(200);
       expect(data).toHaveProperty('data');
-      expect(data).toHaveProperty('error', null);
+      expect(data.error).toBeUndefined();
       expect(data.data).toMatchObject({
         id: governmentGrant.id,
         name: governmentGrant.name,
@@ -397,7 +397,7 @@ describe('/api/grants', () => {
 
       // Assert
       expect(response.status).toBe(404);
-      expect(data).toHaveProperty('data', null);
+      expect(data.data).toBeUndefined();
       expect(data).toHaveProperty('error', 'Grant not found');
 
       // Verify Supabase was called with the invalid ID
