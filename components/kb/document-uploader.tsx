@@ -1,5 +1,6 @@
-// components/kb/document-uploader.tsx
 'use client';
+
+// components/kb/document-uploader.tsx
 
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';

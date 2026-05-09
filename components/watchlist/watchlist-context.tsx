@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchApi } from '@/lib/api/client';
+
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 
 interface WatchlistStatus {

@@ -1,4 +1,5 @@
 'use client';
+import { fetchApi } from '@/lib/api/client';
 
 import { useEffect, useState, use, useCallback } from 'react';
 import Link from 'next/link';
@@ -31,7 +32,7 @@ export default function ApplicationPage({ params }: PageProps) {
   // Fetch usage status
   const fetchUsage = useCallback(async () => {
     try {
-      const res = await fetch('/api/usage');
+      const res = await fetchApi('/api/usage');
       if (res.ok) {
         const data = await res.json();
         setUsage(data.data);
@@ -43,7 +44,7 @@ export default function ApplicationPage({ params }: PageProps) {
 
   useEffect(() => {
     async function fetchGrant() {
-      const res = await fetch(`/api/grants/${grantId}`);
+      const res = await fetchApi(`/api/grants/${grantId}`);
       if (res.ok) {
         const data = await res.json();
         setGrant(data.data);
@@ -58,7 +59,7 @@ export default function ApplicationPage({ params }: PageProps) {
   useEffect(() => {
     async function fetchExistingApplication() {
       try {
-        const res = await fetch(`/api/applications?grant_id=${grantId}`);
+        const res = await fetchApi(`/api/applications?grant_id=${grantId}`);
         if (res.ok) {
           const data = await res.json();
           const apps = data.data;

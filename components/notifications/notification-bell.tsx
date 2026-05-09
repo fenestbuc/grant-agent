@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchApi } from '@/lib/api/client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -77,7 +79,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await fetch('/api/notifications?limit=5');
+      const response = await fetchApi('/api/notifications?limit=5');
       if (!response.ok) return;
 
       const result: NotificationsResponse = await response.json();

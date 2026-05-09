@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchApi } from '@/lib/api/client';
+
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Heart, Trash2, ExternalLink } from 'lucide-react';
@@ -34,7 +36,7 @@ export default function WatchlistPage() {
       const url = deadlineFilter === 'upcoming' 
         ? '/api/watchlist?deadline=upcoming' 
         : '/api/watchlist';
-      const response = await fetch(url);
+      const response = await fetchApi(url);
       const result = await response.json();
       if (response.ok) {
         setWatchlist(result.data || []);

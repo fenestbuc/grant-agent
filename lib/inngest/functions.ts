@@ -11,7 +11,7 @@ const supabase = createClient(
 export const weeklyDigestEmail = inngest.createFunction(
   { id: 'weekly-digest-email' },
   { cron: '0 9 * * 1' }, // Monday 9 AM
-  async () => {
+  async ({ step }) => {
     const users = await step.run('fetch-users', async () => {
       const { data, error } = await supabase.from('startups').select('id, user_id, company_name');
       if (error) throw new Error(error.message);
@@ -58,7 +58,7 @@ export const weeklyDigestEmail = inngest.createFunction(
 export const deadlineReminder = inngest.createFunction(
   { id: 'deadline-reminder' },
   { cron: '0 9 * * *' }, // Daily 9 AM
-  async () => {
+  async ({ step }) => {
     return { success: true, message: 'Deadline reminder stub' };
   }
 );

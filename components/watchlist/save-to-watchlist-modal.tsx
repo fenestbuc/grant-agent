@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchApi } from '@/lib/api/client';
+
 import { useState } from 'react';
 import {
   Dialog,

@@ -35,7 +35,7 @@ export default async function ApplicationsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {applications.map((app: { id: string; status: string; grant_id: string; answers: Record<string, string>; grants: { name: string; provider: string; questions: unknown[] } }) => {
           const totalQ = app.grants?.questions?.length || 0;
-          const answeredQ = Object.values(app.answers || {}).filter((a: unknown) => a.trim().length > 0).length;
+          const answeredQ = Object.values(app.answers || {}).filter((a: unknown) => typeof a === 'string' && a.trim().length > 0).length;
           const progress = totalQ > 0 ? Math.round((answeredQ / totalQ) * 100) : 0;
           
           return (

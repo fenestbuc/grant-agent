@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchApi } from '@/lib/api/client';
+
 import { useEffect, useState } from 'react';
 import { GrantCard } from './grant-card';
 import { WatchlistProvider } from '@/components/watchlist';
@@ -19,7 +21,7 @@ export function RecommendedGrants() {
   useEffect(() => {
     async function fetchRecommended() {
       try {
-        const res = await fetch('/api/grants/recommended');
+        const res = await fetchApi('/api/grants/recommended');
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || 'Failed to fetch recommendations');

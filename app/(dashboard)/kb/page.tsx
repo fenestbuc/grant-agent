@@ -1,5 +1,8 @@
-// app/(dashboard)/kb/page.tsx
 'use client';
+import { fetchApi } from '@/lib/api/client';
+
+
+// app/(dashboard)/kb/page.tsx
 
 import { useEffect, useState, useCallback } from 'react';
 import { DocumentUploader } from '@/components/kb/document-uploader';
@@ -13,7 +16,7 @@ export default function KnowledgeBasePage() {
 
   const fetchDocuments = useCallback(async () => {
     try {
-      const response = await fetch('/api/kb');
+      const response = await fetchApi('/api/kb');
       const result = await response.json();
       if (response.ok) {
         setDocuments(result.data || []);

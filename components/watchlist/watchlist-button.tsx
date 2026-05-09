@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchApi } from '@/lib/api/client';
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { SaveToWatchlistModal } from './save-to-watchlist-modal';
@@ -44,7 +46,7 @@ export function WatchlistButton({
     // Fallback: fetch individually if no context or status not found
     async function checkWatchlist() {
       try {
-        const response = await fetch(`/api/watchlist/check/${grantId}`);
+        const response = await fetchApi(`/api/watchlist/check/${grantId}`);
         const result = await response.json();
         setInWatchlist(result.data.inWatchlist);
         setWatchlistId(result.data.watchlistId);
@@ -85,7 +87,7 @@ export function WatchlistButton({
   const handleSaved = () => {
     setInWatchlist(true);
     // Refetch to get the watchlist ID
-    fetch(`/api/watchlist/check/${grantId}`)
+    fetchApi(`/api/watchlist/check/${grantId}`)
       .then((res) => res.json())
       .then((result) => {
         const newWatchlistId = result.data.watchlistId;

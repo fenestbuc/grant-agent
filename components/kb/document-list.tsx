@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchApi } from '@/lib/api/client';
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +31,7 @@ export function DocumentList({ documents, onDelete }: DocumentListProps) {
   const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
-      const response = await fetch(`/api/kb/${id}`, { method: 'DELETE' });
+      const response = await fetchApi(`/api/kb/${id}`, { method: 'DELETE' });
       if (response.ok) {
         onDelete(id);
       }

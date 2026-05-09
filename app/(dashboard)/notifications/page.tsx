@@ -1,5 +1,8 @@
-// app/(dashboard)/notifications/page.tsx
 'use client';
+import { fetchApi } from '@/lib/api/client';
+
+
+// app/(dashboard)/notifications/page.tsx
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
@@ -30,7 +33,7 @@ export default function NotificationsPage() {
       const url = filter === 'all'
         ? '/api/notifications?limit=100'
         : `/api/notifications?limit=100&type=${filter}`;
-      const response = await fetch(url);
+      const response = await fetchApi(url);
       const result = await response.json();
       if (response.ok) {
         setNotifications(result.data || []);

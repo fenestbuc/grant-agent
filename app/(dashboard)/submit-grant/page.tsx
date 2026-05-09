@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchApi } from '@/lib/api/client';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -30,7 +32,7 @@ export default function SubmitGrantPage() {
   useEffect(() => {
     async function fetchSubmissions() {
       try {
-        const res = await fetch('/api/user-grants');
+        const res = await fetchApi('/api/user-grants');
         if (res.ok) {
           const data = await res.json();
           setSubmissions(data.data || []);
