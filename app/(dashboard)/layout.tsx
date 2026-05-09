@@ -30,7 +30,7 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-background transition-colors">
       <Sidebar />
       <div className="lg:pl-64">
-        <Header startup={startup} userEmail={user.email || ''} />
+        <Header  />
         <main className="p-4 lg:p-8">
           {children}
         </main>
