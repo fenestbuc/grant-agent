@@ -1,6 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import type { ExtractedMetadata } from '@/types';
 
@@ -36,6 +35,7 @@ export async function extractTextFromFile(
   switch (fileType.toLowerCase()) {
     case 'pdf':
     case 'application/pdf':
+      const pdfParse = require("pdf-parse");
       const result = await pdfParse(buffer);
       return result.text;
 

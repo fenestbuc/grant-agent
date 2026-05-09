@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Grant Agent
 
-## Getting Started
+An AI-powered platform helping Indian startup founders discover grants and auto-generate application answers.
 
-First, run the development server:
+## Architecture
+
+- **Frontend:** Next.js 16 (App Router), TailwindCSS, shadcn/ui
+- **Backend:** NestJS (port 4000) for API services
+- **Database:** Supabase (PostgreSQL + pgvector)
+- **Background Jobs:** Inngest
+- **AI Models:** Claude 3.5 Sonnet (generation), OpenAI text-embedding-3-large (embeddings)
+- **Scraper:** Python + Modal.com + Crawl4AI
+
+## Setup
+
+### 1. Frontend (Next.js)
 
 ```bash
+npm install
+cp .env.example .env.local
+# Fill in Supabase, OpenAI, Resend, and Inngest keys
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Backend (NestJS)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Fill in SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
+npm run start:dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Scraper (Modal)
 
-## Learn More
+```bash
+cd scraper
+pip install modal
+modal setup
+modal deploy modal_app.py
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Grant Portal:** Filter by sector, stage, amount, provider type
+- **Relevance Scoring:** Grants are matched against your startup profile
+- **Knowledge Base:** Upload pitch decks, financials, and company docs
+- **AI Application Generator:** RAG-powered answer generation specific to each grant
+- **Watchlist & Reminders:** Save grants and get notified before deadlines

@@ -36,9 +36,10 @@ export function GrantCard({ grant, matchScore, matchReasons }: GrantCardProps) {
 
 
 
-  const deadline = formatDeadline(grant.deadline);
-  const deadline = formatDeadline(grant.deadline);
+   
+   
 
+  const deadline = formatDeadline(grant.deadline);
   const status = computeGrantStatus(grant);
   const statusLabel = getStatusLabel(status);
   const statusColor = getStatusColor(status);
