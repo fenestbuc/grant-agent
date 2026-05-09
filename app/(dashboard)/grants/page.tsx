@@ -26,6 +26,15 @@ interface PageProps {
   }>;
 }
 
+
+function getTimestamps() {
+  const n = Date.now();
+  return {
+    now: new Date(n).toISOString(),
+    sevenDaysFromNow: new Date(n + 7 * 24 * 60 * 60 * 1000).toISOString()
+  };
+}
+
 async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchParams'] }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -81,8 +90,8 @@ async function GrantsGrid({ searchParams }: { searchParams: PageProps['searchPar
 
   // Apply status filter using deadline-based SQL logic
   if (statuses.length > 0) {
-    const now = new Date().toISOString();
-    const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { now, sevenDaysFromNow } = getTimestamps();
+        
 
     const orConditions: string[] = [];
 

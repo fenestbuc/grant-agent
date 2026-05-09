@@ -12,7 +12,7 @@ describe('WatchlistController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule: TestingModule = await Test.createTestingModule({
       controllers: [WatchlistController],
       providers: [
         {
@@ -22,8 +22,8 @@ describe('WatchlistController', () => {
       ],
     }).compile();
 
-    controller = module.get<WatchlistController>(WatchlistController);
-    service = module.get<WatchlistService>(WatchlistService);
+    controller = testingModule.get<WatchlistController>(WatchlistController);
+    service = testingModule.get<WatchlistService>(WatchlistService);
   });
 
   it('should be defined', () => {

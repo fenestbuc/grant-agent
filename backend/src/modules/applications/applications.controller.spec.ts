@@ -13,7 +13,7 @@ describe('ApplicationsController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule: TestingModule = await Test.createTestingModule({
       controllers: [ApplicationsController],
       providers: [
         {
@@ -23,8 +23,8 @@ describe('ApplicationsController', () => {
       ],
     }).compile();
 
-    controller = module.get<ApplicationsController>(ApplicationsController);
-    service = module.get<ApplicationsService>(ApplicationsService);
+    controller = testingModule.get<ApplicationsController>(ApplicationsController);
+    service = testingModule.get<ApplicationsService>(ApplicationsService);
   });
 
   it('should be defined', () => {

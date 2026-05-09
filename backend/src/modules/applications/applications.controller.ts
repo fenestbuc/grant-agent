@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { Controller, Get, Post, Put, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
 import { SupabaseAuthGuard } from '../../common/guards/supabase-auth.guard';

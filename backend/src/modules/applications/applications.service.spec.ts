@@ -5,11 +5,11 @@ describe('ApplicationsService', () => {
   let service: ApplicationsService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule: TestingModule = await Test.createTestingModule({
       providers: [ApplicationsService],
     }).compile();
 
-    service = module.get<ApplicationsService>(ApplicationsService);
+    service = testingModule.get<ApplicationsService>(ApplicationsService);
   });
 
   it('should be defined', () => {

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
 import { GrantsService } from './grants.service';

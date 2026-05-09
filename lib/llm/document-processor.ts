@@ -35,6 +35,7 @@ export async function extractTextFromFile(
   switch (fileType.toLowerCase()) {
     case 'pdf':
     case 'application/pdf':
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const pdfParse = require("pdf-parse");
       const result = await pdfParse(buffer);
       return result.text;

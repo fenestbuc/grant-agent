@@ -1,5 +1,4 @@
 
-import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,7 @@ export default async function DashboardPage() {
           <CardContent>
             {watchlist && watchlist.length > 0 ? (
               <ul className="space-y-3">
-                {watchlist.map((item: any) => (
+                {watchlist.map((item: { id: string; grants: { name: string; deadline: string } }) => (
                   <li key={item.id} className="flex justify-between items-center text-sm">
                     <span className="truncate mr-2 font-medium">{item.grants?.name}</span>
                     <span className="text-red-500 whitespace-nowrap">{new Date(item.grants?.deadline).toLocaleDateString()}</span>
@@ -67,7 +66,7 @@ export default async function DashboardPage() {
           <CardContent>
             {applications && applications.length > 0 ? (
               <ul className="space-y-3">
-                {applications.map((app: any) => (
+                {applications.map((app: { id: string; status: string; grants: { name: string } }) => (
                   <li key={app.id} className="flex justify-between items-center text-sm">
                     <span className="truncate mr-2 font-medium">{app.grants?.name}</span>
                     <span className="capitalize text-muted-foreground">{app.status}</span>

@@ -17,7 +17,7 @@ describe('GrantsController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule: TestingModule = await Test.createTestingModule({
       controllers: [GrantsController],
       providers: [
         {
@@ -27,8 +27,8 @@ describe('GrantsController', () => {
       ],
     }).compile();
 
-    controller = module.get<GrantsController>(GrantsController);
-    service = module.get<GrantsService>(GrantsService);
+    controller = testingModule.get<GrantsController>(GrantsController);
+    service = testingModule.get<GrantsService>(GrantsService);
   });
 
   it('should be defined', () => {

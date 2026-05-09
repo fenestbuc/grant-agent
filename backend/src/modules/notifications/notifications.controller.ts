@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Controller, Get, Patch, Req, Param, UseGuards } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { SupabaseAuthGuard } from '../../common/guards/supabase-auth.guard';

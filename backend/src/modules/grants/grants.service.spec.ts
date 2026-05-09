@@ -24,11 +24,11 @@ describe('GrantsService', () => {
   let service: GrantsService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule: TestingModule = await Test.createTestingModule({
       providers: [GrantsService],
     }).compile();
 
-    service = module.get<GrantsService>(GrantsService);
+    service = testingModule.get<GrantsService>(GrantsService);
   });
 
   it('should be defined', () => {

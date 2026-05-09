@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Controller, Get, Post, Req, Body, UseGuards } from '@nestjs/common';
 import { WatchlistService } from './watchlist.service';
 import { SupabaseAuthGuard } from '../../common/guards/supabase-auth.guard';

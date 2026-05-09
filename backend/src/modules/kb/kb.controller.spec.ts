@@ -12,7 +12,7 @@ describe('KbController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule: TestingModule = await Test.createTestingModule({
       controllers: [KbController],
       providers: [
         {
@@ -22,8 +22,8 @@ describe('KbController', () => {
       ],
     }).compile();
 
-    controller = module.get<KbController>(KbController);
-    service = module.get<KbService>(KbService);
+    controller = testingModule.get<KbController>(KbController);
+    service = testingModule.get<KbService>(KbService);
   });
 
   it('should be defined', () => {

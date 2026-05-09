@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -34,9 +33,9 @@ export default async function ApplicationsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight">My Applications</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {applications.map((app: any) => {
+        {applications.map((app: { id: string; status: string; grant_id: string; answers: Record<string, string>; grants: { name: string; provider: string; questions: unknown[] } }) => {
           const totalQ = app.grants?.questions?.length || 0;
-          const answeredQ = Object.values(app.answers || {}).filter((a: any) => a.trim().length > 0).length;
+          const answeredQ = Object.values(app.answers || {}).filter((a: unknown) => a.trim().length > 0).length;
           const progress = totalQ > 0 ? Math.round((answeredQ / totalQ) * 100) : 0;
           
           return (

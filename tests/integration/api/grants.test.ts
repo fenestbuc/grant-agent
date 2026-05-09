@@ -11,7 +11,7 @@ import type { Grant } from '@/types';
 // Create mock query builder that tracks method calls and returns appropriate data
 function createMockQueryBuilder(mockData: Grant[] = [], mockCount: number | null = null) {
   let filteredData = [...mockData];
-  let currentFilters: {
+  const currentFilters: {
     isActive?: boolean;
     search?: string;
     sectors?: string[];
