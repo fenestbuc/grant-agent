@@ -1,9 +1,6 @@
+
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/api/cron/trigger-scrape",
-      "schedule": "0 0 * * *"
-    }
-  ]
+  "framework": "nextjs",
+  "buildCommand": "npm run build:frontend",
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet ./"
 }
