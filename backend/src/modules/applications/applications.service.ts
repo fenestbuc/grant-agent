@@ -1,16 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable, BadRequestException } from '@nestjs/common';
+
+import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { LlmService } from '../llm/llm.service';
 
 @Injectable()
 export class ApplicationsService {
   private supabase: SupabaseClient;
 
-  constructor() {
+  constructor(private readonly llmService: LlmService) {
     this.supabase = createClient(
-      process.env.SUPABASE_URL || 'https://mock.supabase.co',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || 'mock-key'
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     );
   }
 
@@ -23,7 +23,7 @@ export class ApplicationsService {
 
     if (!startup) throw new BadRequestException('Startup not found');
 
-    let q = this.supabase.from('applications').select('*').eq('startup_id', startup.id);
+    let q = this.supabase.from('applications').select('*, grants(name)').eq('startup_id', startup.id);
     if (grantId) q = q.eq('grant_id', grantId);
 
     const { data, error } = await q;
@@ -67,6 +67,43 @@ export class ApplicationsService {
   }
 
   async generateAnswer(userId: string, grantId: string, questionId: string) {
-    return { answer: 'Mock generated answer using RAG' };
+    // 1. Get Startup Profile
+    const { data: startup, error: startupError } = await this.supabase
+      .from('startups')
+      .select('id, answers_generated')
+      .eq('user_id', userId)
+      .single();
+
+    if (startupError || !startup) throw new BadRequestException('Startup not found');
+
+    // Usage check
+    if (startup.answers_generated >= 100) {
+      throw new BadRequestException('Monthly generation limit reached.');
+    }
+
+    // 2. Get Grant Details (for question text and limits)
+    const { data: grant } = await this.supabase
+      .from('grants')
+      .select('name, questions')
+      .eq('id', grantId)
+      .single();
+
+    if (!grant) throw new BadRequestException('Grant not found');
+
+    const questionObj = (grant.questions || []).find((q: any) => q.id === questionId);
+    if (!questionObj) throw new BadRequestException('Question not found in grant');
+
+    // 3. Generate Answer using LLM + RAG
+    const answer = await this.llmService.generateAnswer(
+      startup.id,
+      questionObj.question,
+      grant.name,
+      questionObj.max_length || 2000
+    );
+
+    // 4. Increment usage tracking safely via RPC
+    await this.supabase.rpc('increment_answers_generated', { row_id: startup.id });
+
+    return { answer };
   }
 }

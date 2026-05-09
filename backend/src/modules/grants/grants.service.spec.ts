@@ -1,3 +1,4 @@
+import { LlmService } from '../llm/llm.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GrantsService } from './grants.service';
 
@@ -25,7 +26,13 @@ describe('GrantsService', () => {
 
   beforeEach(async () => {
     const testingModule: TestingModule = await Test.createTestingModule({
-      providers: [GrantsService],
+      providers: [
+        GrantsService,
+        {
+          provide: LlmService,
+          useValue: { generateEmbedding: jest.fn().mockResolvedValue([0.1, 0.2, 0.3]) }
+        }
+      ],
     }).compile();
 
     service = testingModule.get<GrantsService>(GrantsService);

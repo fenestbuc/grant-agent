@@ -1,3 +1,4 @@
+import { LlmModule } from './modules/llm/llm.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
 import { KbModule } from './modules/kb/kb.module';
@@ -9,6 +10,7 @@ import { GrantsModule } from './modules/grants/grants.module';
 
 @Module({
   imports: [
+    LlmModule,
     NotificationsModule,
     WatchlistModule,
     KbModule,

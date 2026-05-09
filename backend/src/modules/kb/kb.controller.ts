@@ -20,6 +20,6 @@ export class KbController {
   async uploadFile(@Req() req: any, @UploadedFile() file: any) {
     // In a real implementation this would stream to Supabase Storage
     // and trigger Inngest. This proves the backend separation.
-    return { success: true, message: 'File received' };
+    return this.kbService.uploadDocument(req.user.id, file);
   }
 }
