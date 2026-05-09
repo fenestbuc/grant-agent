@@ -1,15 +1,15 @@
-// app/api/usage/route.ts
 import { createClient } from '@/lib/supabase/server';
 import { getUsageStatus, LIMITS } from '@/lib/usage-limits';
 import { NextResponse } from 'next/server';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET() {
   try {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const { data: startup } = await supabase
@@ -19,14 +19,12 @@ export async function GET(): Promise<NextResponse> {
       .single();
 
     if (!startup) {
-      return NextResponse.json({ error: 'No startup profile found' }, { status: 400 });
+      return apiError('No startup profile found', 400);
     }
 
     const status = await getUsageStatus(startup.id);
 
-    return NextResponse.json({
-      data: status,
-    });
+    return apiSuccess(status);
   } catch (error) {
     console.error('Usage status error:', error);
     // Return default values on error so UI can still render

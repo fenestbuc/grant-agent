@@ -1,10 +1,11 @@
-// components/grants/grant-card.tsx
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { WatchlistButton } from '@/components/watchlist';
 import { computeGrantStatus, getStatusLabel, getStatusColor } from '@/lib/utils/grant-status';
+import { formatAmount } from '@/lib/utils/format';
+import { providerTypeColors } from '@/lib/utils/colors';
 import type { Grant } from '@/types';
 
 interface GrantCardProps {
@@ -14,39 +15,39 @@ interface GrantCardProps {
 }
 
 export function GrantCard({ grant, matchScore, matchReasons }: GrantCardProps) {
-  const formatAmount = (amount: number | null) => {
-    if (!amount) return null;
-    if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)} Cr`;
-    if (amount >= 100000) return `₹${(amount / 100000).toFixed(0)} L`;
-    return `₹${amount.toLocaleString('en-IN')}`;
-  };
+
 
   const formatDeadline = (deadline: string | null) => {
-    if (!deadline) return 'Rolling';
+    if (!deadline) return { label: 'Rolling', color: 'text-muted-foreground' };
     const date = new Date(deadline);
     const now = new Date();
     const daysUntil = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (daysUntil < 0) return 'Expired';
-    if (daysUntil === 0) return 'Today';
-    if (daysUntil === 1) return 'Tomorrow';
-    if (daysUntil <= 7) return `${daysUntil} days left`;
-    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+    if (daysUntil < 0) return { label: 'Expired', color: 'text-muted-foreground' };
+    if (daysUntil === 0) return { label: 'Today', color: 'text-red-500 dark:text-red-400' };
+    if (daysUntil === 1) return { label: 'Tomorrow', color: 'text-red-500 dark:text-red-400' };
+    if (daysUntil <= 7) return { label: `${daysUntil} days left`, color: 'text-red-500 dark:text-red-400' };
+    if (daysUntil <= 30) return { label: `${daysUntil} days left`, color: 'text-amber-500 dark:text-amber-400' };
+    return {
+      label: date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+      color: 'text-emerald-600 dark:text-emerald-400',
+    };
   };
 
-  const providerTypeColors: Record<string, string> = {
-    government: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    csr: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    private: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-    ngo: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  };
+
+
+  const deadline = formatDeadline(grant.deadline);
+  const deadline = formatDeadline(grant.deadline);
 
   const status = computeGrantStatus(grant);
   const statusLabel = getStatusLabel(status);
   const statusColor = getStatusColor(status);
 
   return (
-    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
+    <Card className="group relative h-full flex flex-col cursor-pointer overflow-hidden border border-border hover:shadow-md hover:border-primary/20 transition-all duration-200">
+      {/* Subtle gradient top edge */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-wrap">
@@ -59,8 +60,8 @@ export function GrantCard({ grant, matchScore, matchReasons }: GrantCardProps) {
           </div>
           <div className="flex items-center gap-2">
             {grant.deadline && (
-              <span className="text-xs text-muted-foreground">
-                {formatDeadline(grant.deadline)}
+              <span className={`text-xs font-medium ${deadline.color}`}>
+                {deadline.label}
               </span>
             )}
             <WatchlistButton grantId={grant.id} grantName={grant.name} variant="icon" />
@@ -117,7 +118,7 @@ export function GrantCard({ grant, matchScore, matchReasons }: GrantCardProps) {
 
         {/* Amount Range */}
         <div className="mb-3">
-          <span className="text-lg font-semibold text-primary">
+          <span className="text-xl font-bold tracking-tight text-foreground">
             {grant.amount_min && grant.amount_max ? (
               `${formatAmount(grant.amount_min)} - ${formatAmount(grant.amount_max)}`
             ) : grant.amount_max ? (

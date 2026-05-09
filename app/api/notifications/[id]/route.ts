@@ -1,18 +1,18 @@
-// app/api/notifications/[id]/route.ts
 import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
 export async function PATCH(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+) {
   try {
     const { id } = await params;
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const { data: startup } = await supabase
@@ -22,7 +22,7 @@ export async function PATCH(
       .single();
 
     if (!startup) {
-      return NextResponse.json({ error: 'No startup profile' }, { status: 400 });
+      return apiError('No startup profile', 400);
     }
 
     // Mark the notification as read
@@ -35,16 +35,16 @@ export async function PATCH(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
     if (!notification) {
-      return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
+      return apiError('Notification not found', 404);
     }
 
-    return NextResponse.json({ data: notification });
+    return apiSuccess(notification);
   } catch (error) {
     console.error('Notification mark read error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError('Internal server error', 500);
   }
 }

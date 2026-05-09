@@ -1,0 +1,84 @@
+--- app/(dashboard)/applications/[grantId]/page.tsx
++++ app/(dashboard)/applications/[grantId]/page.tsx
+@@ -21,6 +21,8 @@
+   const [generating, setGenerating] = useState<Record<string, boolean>>({});
+   const [errors, setErrors] = useState<Record<string, string>>({});
+   const [copied, setCopied] = useState<Record<string, boolean>>({});
+   const [usage, setUsage] = useState<UsageStatus | null>(null);
++  const [applicationId, setApplicationId] = useState<string | null>(null);
++  const [saving, setSaving] = useState(false);
+ 
+   // Fetch usage status
+@@ -32,6 +34,30 @@
+   // Fetch grant details
+   useEffect(() => {
++    async function loadApplication() {
++      if (!grantId) return;
++      try {
++        const res = await fetch(`/api/applications?grantId=${grantId}`);
++        if (res.ok) {
++          const data = await res.json();
++          if (data.data && data.data.length > 0) {
++            const app = data.data[0];
++            setApplicationId(app.id);
++            const loadedAnswers: Record<string, string> = {};
++            Object.entries(app.answers || {}).forEach(([key, value]) => {
++              loadedAnswers[key] = value as string;
++            });
++            if (Object.keys(loadedAnswers).length > 0) {
++              setAnswers(loadedAnswers);
++              setOriginalAnswers(loadedAnswers);
++              const generatedState: Record<string, boolean> = {};
++              Object.keys(loadedAnswers).forEach(key => {
++                if (loadedAnswers[key]) generatedState[key] = true;
++              });
++              setGenerated(generatedState);
++            }
++          }
++        }
++      } catch (e) {}
++    }
++    loadApplication();
++
+     async function fetchGrant() {
+@@ -118,6 +144,30 @@
+   };
+ 
++  const handleSaveAsDraft = async () => {
++    if (!grant) return;
++    setSaving(true);
++    try {
++      const res = await fetch('/api/applications', {
++        method: applicationId ? 'PUT' : 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({
++          ...(applicationId && { id: applicationId }),
++          grantId,
++          answers,
++          status: 'draft',
++        }),
++      });
++
++      if (res.ok) {
++        const data = await res.json();
++        if (!applicationId && data.data) setApplicationId(data.data.id);
++        setOriginalAnswers(answers);
++      }
++    } catch (error) {
++      console.error('Failed to save draft:', error);
++    } finally {
++      setSaving(false);
++    }
++  };
++
+   const generateAllAnswers = async () => {
+@@ -308,7 +358,7 @@
+       {/* Actions */}
+       {questions && questions.length > 0 && (
+         <div className="flex gap-4 pt-4 border-t">
+-          <Button variant="outline" className="flex-1">
+-            Save as Draft
++          <Button variant="outline" className="flex-1" onClick={handleSaveAsDraft} disabled={saving}>
++            {saving ? "Saving..." : "Save as Draft"}
+           </Button>
+           <Button asChild className="flex-1">

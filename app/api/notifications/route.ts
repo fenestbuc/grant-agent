@@ -1,7 +1,7 @@
-// app/api/notifications/route.ts
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { Notification } from '@/types';
+import { apiError } from '@/lib/api/response';
 
 interface NotificationsResponse {
   data: Notification[];
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const { data: startup } = await supabase
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .single();
 
     if (!startup) {
-      return NextResponse.json({ error: 'No startup profile' }, { status: 400 });
+      return apiError('No startup profile', 400);
     }
 
     // Parse query params
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .limit(limit);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
     // Get unread count
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .eq('is_read', false);
 
     if (countError) {
-      return NextResponse.json({ error: countError.message }, { status: 500 });
+      return apiError(countError.message, 500);
     }
 
     const response: NotificationsResponse = {
@@ -71,6 +71,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Notifications list error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError('Internal server error', 500);
   }
 }
