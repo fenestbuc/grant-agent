@@ -1,7 +1,7 @@
-// app/api/account/delete/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,16 +9,13 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     // Verify confirmation
     const { confirmation } = await request.json();
     if (confirmation !== 'DELETE') {
-      return NextResponse.json(
-        { error: 'Invalid confirmation. Please type DELETE to confirm.' },
-        { status: 400 }
-      );
+      return apiError('Invalid confirmation. Please type DELETE to confirm.', 400);
     }
 
     // Get startup data
@@ -61,20 +58,12 @@ export async function POST(request: NextRequest) {
 
     if (deleteError) {
       console.error('Delete user error:', deleteError);
-      return NextResponse.json(
-        { error: 'Failed to delete account' },
-        { status: 500 }
-      );
+      return apiError('Failed to delete account', 500);
     }
 
-    return NextResponse.json({
-      message: 'Account deleted successfully'
-    });
+    return apiSuccess({ message: 'Account deleted successfully' });
   } catch (error) {
     console.error('Account deletion error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete account' },
-      { status: 500 }
-    );
+    return apiError('Failed to delete account', 500);
   }
 }

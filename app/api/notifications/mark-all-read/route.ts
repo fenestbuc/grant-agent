@@ -1,14 +1,13 @@
-// app/api/notifications/mark-all-read/route.ts
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { apiError, apiSuccess } from '@/lib/api/response';
 
-export async function POST(): Promise<NextResponse> {
+export async function POST() {
   try {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const { data: startup } = await supabase
@@ -18,7 +17,7 @@ export async function POST(): Promise<NextResponse> {
       .single();
 
     if (!startup) {
-      return NextResponse.json({ error: 'No startup profile' }, { status: 400 });
+      return apiError('No startup profile', 400);
     }
 
     // Mark all notifications as read for this startup
@@ -29,12 +28,12 @@ export async function POST(): Promise<NextResponse> {
       .eq('is_read', false);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiError(error.message, 500);
     }
 
-    return NextResponse.json({ data: { success: true } });
+    return apiSuccess({ success: true });
   } catch (error) {
     console.error('Mark all notifications read error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError('Internal server error', 500);
   }
 }
