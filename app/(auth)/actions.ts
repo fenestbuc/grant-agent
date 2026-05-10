@@ -5,20 +5,29 @@ import { redirect } from 'next/navigation';
 
 export async function signInWithEmail(formData: FormData) {
   const email = formData.get('email') as string;
+  
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return { error: "Configuration Error: NEXT_PUBLIC_SUPABASE_URL is not set on Vercel." };
+  }
+  
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-    },
-  });
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://grant-agent-sigma.vercel.app'}/auth/callback`,
+      },
+    });
 
-  if (error) {
-    return { error: error.message };
+    if (error) {
+      return { error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { error: `Fetch Exception: ${err.message || 'Unknown error'}` };
   }
-
-  return { success: true };
 }
 
 export async function signOut() {
