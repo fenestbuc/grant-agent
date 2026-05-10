@@ -2,7 +2,7 @@ import { inngest } from './client';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 're_mock_key_for_build');
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co',
   process.env.SUPABASE_SERVICE_ROLE_KEY || 'mock-key'
@@ -58,7 +58,7 @@ export const weeklyDigestEmail = inngest.createFunction(
 export const deadlineReminder = inngest.createFunction(
   { id: 'deadline-reminder' },
   { cron: '0 9 * * *' }, // Daily 9 AM
-  async ({ step }) => {
+  async () => {
     return { success: true, message: 'Deadline reminder stub' };
   }
 );
