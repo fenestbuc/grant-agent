@@ -9,6 +9,12 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // Don't crash if NEXT_PUBLIC_SUPABASE_URL isn't fully defined yet on build/edge.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn("Middleware missing SUPABASE env vars. Pass through.");
+    return response;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
