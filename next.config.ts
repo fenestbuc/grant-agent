@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/:path*`, // Proxy to Backend
+        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL || "https://grant-agent-backend-90747239762.us-central1.run.app"}/:path*`, // Proxy to Backend
       },
     ];
   },
